@@ -5,8 +5,11 @@ import { useState } from "react";
 import "react-toastify/dist/ReactToastify.css";
 import { Bounce, ToastContainer, toast } from "react-toastify";
 import { useToast } from "../context/ToastContext.jsx";
+import { ClipLoader } from "react-spinners";
 const Contact = () => {
   // const [width,setWidth]=useState(window.innerWidth)
+  const [loading, setLoading] = useState(false);
+  
   const successToast = (msg) => {
     toast.success(msg, {
       position: "top-center",
@@ -59,25 +62,31 @@ const Contact = () => {
     failureToast("Failed to send email");
   }
   const onSubmit = async (data) => {
+    setLoading(true);
     console.log(data);
-    let response = await fetch(
-      `${import.meta.env.VITE_REACT_APP_BACKEND_BASE_URL}/contact`,
-      {
-        method: "POST",
-
-        headers: {
-          "Content-Type": "application/json",
-        },
-
-        body: JSON.stringify(data),
+    try {
+      let response = await fetch(
+        `${import.meta.env.VITE_REACT_APP_BACKEND_BASE_URL}/contact`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(data),
+        }
+      );
+      let content = await response.json();
+      if (content.success) {
+        reset();
+        emailSent();
+      } else {
+        failure();
       }
-    );
-    let content = await response.json();
-    if (content.success) {
-      reset();
-      emailSent();
-    } else {
-      failed();
+    } catch (error) {
+      console.error("Error submitting form:", error);
+      failure();
+    } finally {
+      setLoading(false);
     }
   };
  
@@ -194,12 +203,21 @@ const Contact = () => {
                 {errors.concern.message}
               </span>
             )}
-            <input
+            <button
               className="btn btn-primary"
-              style={{ margin: "inherit" }}
+              style={{ margin: "inherit", minWidth: "120px" }}
               type="submit"
-              defaultValue="Submit"
-            />
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <ClipLoader size={15} color={"#ffffff"} loading={loading} />
+                  <span className="ml-2"> Submitting...</span>
+                </>
+              ) : (
+                "Submit"
+              )}
+            </button>
             <div
               className="container mb-4 d-flex"
               style={{ justifyContent: "space-between" }}

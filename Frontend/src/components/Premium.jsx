@@ -1,7 +1,123 @@
-import React from 'react'
+import React, { useEffect, useContext } from 'react'
 import { Link } from 'react-router-dom'
+import { toast } from 'react-toastify'
+import { userContext } from '../context/userContext'
 
 const Premium = () => {
+  const { LoginUser } = useContext(userContext);
+  
+  useEffect(() => {
+    // Load Razorpay script
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    document.body.appendChild(script);
+    
+    // Initialize Razorpay handler
+    window.razorpayHandler = async (amount, planName) => {
+      if (!LoginUser) {
+        toast.error("Please login to subscribe to a plan");
+        return;
+      }
+      
+      try {
+        // Create order on the server
+        const response = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_BASE_URL || 'http://localhost:3001'}/api/create-subscription-order`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            amount,
+            planName,
+            userId: LoginUser._id
+          })
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to create order');
+        }
+        
+        const orderData = await response.json();
+        
+        if (!orderData.success) {
+          throw new Error(orderData.message || 'Failed to create order');
+        }
+        
+        // Configure Razorpay options with order details
+        const options = {
+          key: orderData.key_id,
+          amount: orderData.order.amount,
+          currency: orderData.order.currency,
+          name: 'Milk On The Way',
+          description: `${planName} Subscription`,
+          order_id: orderData.order.id,
+          image: '/logo.png',
+          handler: async function(response) {
+            try {
+              // Verify payment on the server
+              const verifyResponse = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_BASE_URL || 'http://localhost:3001'}/api/verify-subscription-payment`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                credentials: 'include',
+                body: JSON.stringify({
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature,
+                  planName,
+                  userId: LoginUser._id
+                })
+              });
+              
+              const verifyData = await verifyResponse.json();
+              
+              if (verifyData.success) {
+                toast.success(verifyData.message || `Payment successful! Your ${planName} subscription is now active.`);
+              } else {
+                toast.error(verifyData.message || 'Payment verification failed');
+              }
+            } catch (error) {
+              console.error('Payment verification error:', error);
+              toast.error('Payment verification failed. Please contact support.');
+            }
+          },
+          prefill: {
+            name: LoginUser?.firstname ? `${LoginUser.firstname} ${LoginUser.lastname}` : '',
+            email: LoginUser?.email || '',
+            contact: LoginUser?.phone || ''
+          },
+          notes: {
+            address: 'Milk On The Way Corporate Office',
+            plan: planName
+          },
+          theme: {
+            color: '#3399cc'
+          }
+        };
+        
+        // Initialize Razorpay
+        const razorpay = new window.Razorpay(options);
+        razorpay.on('payment.failed', function(response) {
+          toast.error('Payment failed. Please try again.');
+          console.error('Payment failed:', response.error);
+        });
+        
+        // Open Razorpay payment form
+        razorpay.open();
+      } catch (error) {
+        console.error('Error initializing payment:', error);
+        toast.error('Failed to initialize payment. Please try again later.');
+      }
+    };
+    
+    return () => {
+      // Cleanup
+      window.razorpayHandler = undefined;
+    };
+  }, [LoginUser]);
   return (
     <div>
       <svg xmlns="http://www.w3.org/2000/svg" style={{ display: 'none' }}>
@@ -72,8 +188,9 @@ const Premium = () => {
             <button
               type="button"
               className="w-100 btn btn-lg btn-outline-primary"
+              onClick={() => window.razorpayHandler(499, 'Basic Plan')}
             >
-              Sign up
+              Subscribe Now
             </button>{" "}
           </div>{" "}
         </div>{" "}
@@ -100,8 +217,12 @@ const Premium = () => {
               <li><span className="text-success">Free delivery all days</span></li>
               <li><span className="text-success">Monthly dairy gift box</span></li>
             </ul>{" "}
-            <button type="button" className="w-100 btn btn-lg btn-primary">
-              Get started
+            <button 
+              type="button" 
+              className="w-100 btn btn-lg btn-primary"
+              onClick={() => window.razorpayHandler(899, 'Standard Plan')}
+            >
+              Subscribe Now
             </button>{" "}
           </div>{" "}
         </div>{" "}
@@ -129,8 +250,12 @@ const Premium = () => {
               <li><span className="text-success">Premium dairy gift box</span></li>
               <li><span className="text-success">Exclusive farm visits</span></li>
             </ul>{" "}
-            <button type="button" className="w-100 btn btn-lg btn-primary">
-              Contact us
+            <button 
+              type="button" 
+              className="w-100 btn btn-lg btn-primary"
+              onClick={() => window.razorpayHandler(1499, 'Premium Plan')}
+            >
+              Subscribe Now
             </button>{" "}
           </div>{" "}
         </div>{" "}
@@ -572,7 +697,13 @@ const Premium = () => {
           <h2 className="display-5 fw-bold">Ready for fresh dairy at your doorstep?</h2>
           <p className="lead mb-4">Join thousands of satisfied customers who enjoy fresh, quality dairy products delivered daily. Sign up today and get your first week at 50% off!</p>
           <div className="d-grid gap-2 d-sm-flex justify-content-sm-center">
-            <button type="button" className="btn btn-primary btn-lg px-4 gap-3">Sign Up Now</button>
+            <button 
+              type="button" 
+              className="btn btn-primary btn-lg px-4 gap-3"
+              onClick={() => window.razorpayHandler(899, 'Standard Plan')}
+            >
+              Subscribe Now
+            </button>
             <button type="button" className="btn btn-outline-secondary btn-lg px-4">Learn More</button>
           </div>
         </div>

@@ -5,9 +5,11 @@ import { useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { userContext } from "../context/userContext";
 import { Bounce, ToastContainer, toast } from "react-toastify";
+import { ClipLoader } from "react-spinners";
 const LoginForCustomer = () => {
   const [resMessage, setresMessage] = useState({});
   const [visible, setVisible] = useState(false);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { setLoginUser } = useContext(userContext);
   const {
@@ -69,21 +71,23 @@ const LoginForCustomer = () => {
   // };
   const onSubmit = async (data) => {
     // reset();
+    setLoading(true);
     console.log(data);
-    let response = await fetch(
-      `${import.meta.env.VITE_REACT_APP_BACKEND_BASE_URL}/login`,
-      {
-        method: "POST",
+    try {
+      let response = await fetch(
+        `${import.meta.env.VITE_REACT_APP_BACKEND_BASE_URL}/login`,
+        {
+          method: "POST",
 
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
 
-        body: JSON.stringify(data),
-      }
-    );
-    let content = await response.json();
+          body: JSON.stringify(data),
+        }
+      );
+      let content = await response.json();
     // console.log("in the cone");
     // console.log(content);
     setresMessage(content);
@@ -95,6 +99,12 @@ const LoginForCustomer = () => {
       // failed(content.msg);
       failureToast(content.msg);
       resetField("password");
+    }
+    } catch (error) {
+      console.error("Login error:", error);
+      failureToast("An error occurred during login. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -193,17 +203,20 @@ const LoginForCustomer = () => {
               </div>
 
               {/* Links */}
-              <div className="d-flex flex-column mb-4">
-                <a href="#" className="text-primary text-decoration-none mb-2">
-                  Forgot Password?
-                </a>
-                <Link
-                  to="/login-vendor"
-                  className="text-primary text-decoration-none"
-                >
-                  Are you a vendor?
-                </Link>
-              </div>
+                <div className="d-flex flex-column mb-4">
+                  <Link
+                    to="/forgot-password"
+                    className="text-primary text-decoration-none mb-2"
+                  >
+                    Forgot Password?
+                  </Link>
+                  <Link
+                    to="/login-vendor"
+                    className="text-primary text-decoration-none"
+                  >
+                    Are you a vendor?
+                  </Link>
+                </div>
 
               {/* Submit Button */}
               <button
@@ -214,8 +227,16 @@ const LoginForCustomer = () => {
                   fontSize: "16px",
                   borderRadius: "8px",
                 }}
+                disabled={loading}
               >
-                Login
+                {loading ? (
+                  <>
+                    <ClipLoader size={15} color={"#ffffff"} loading={loading} />
+                    <span className="ml-2"> Logging in...</span>
+                  </>
+                ) : (
+                  "Login"
+                )}
               </button>
             </form>
           </div>

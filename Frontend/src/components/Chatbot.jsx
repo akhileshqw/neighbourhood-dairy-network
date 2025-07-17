@@ -10,6 +10,9 @@ const Chatbot = () => {
   const [inputValue, setInputValue] = useState('');
   const [sessionId, setSessionId] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showAnimation, setShowAnimation] = useState(false); // New state for animation
+  const [botAvatar, setBotAvatar] = useState('/logo.png'); // Bot avatar
+  const [suggestions, setSuggestions] = useState([]); // Quick suggestions
   const messagesEndRef = useRef(null);
   const navigate = useNavigate();
   const { LoginUser } = useContext(userContext);
@@ -31,22 +34,38 @@ const Chatbot = () => {
     },
     'products': {
       response: 'We offer various dairy products. Would you like to see our milk, ghee, or curd products?',
-      options: ['Milk', 'Ghee', 'Curd']
+      options: ['Milk', 'Ghee', 'Curd'],
+      animation: 'product' // New animation trigger
     },
     'milk': {
       response: 'Check out our fresh milk products!',
-      action: () => navigate('/milk')
+      action: () => navigate('/milk'),
+      animation: 'milk' // New animation trigger
     },
     'ghee': {
       response: 'Explore our pure ghee products!',
-      action: () => navigate('/ghee')
+      action: () => navigate('/ghee'),
+      animation: 'ghee' // New animation trigger
     },
     'curd': {
       response: 'Discover our delicious curd and yogurt products!',
-      action: () => navigate('/curd')
+      action: () => navigate('/curd'),
+      animation: 'curd' // New animation trigger
     },
     'premium': {
-      response: 'Learn about our premium subscription plans for regular milk delivery.',
+      response: 'Our premium subscription offers exclusive benefits like priority delivery, special discounts, and access to limited edition products. We have three plans: Basic (₹499/month), Standard (₹899/month), and Premium (₹1499/month).',
+      options: ['View Plans', 'Plan Benefits', 'Subscribe Now'],
+      action: () => navigate('/premium')
+    },
+    'subscription': {
+      response: 'We offer three subscription plans: Basic (₹499/month), Standard (₹899/month), and Premium (₹1499/month). Each plan includes different benefits like milk delivery, ghee delivery, curd delivery, and exclusive products.',
+      options: ['View Plans', 'Plan Comparison', 'Subscribe Now'],
+      action: () => navigate('/premium'),
+      animation: 'subscription'
+    },
+    'plan': {
+      response: 'Our subscription plans are designed to meet different needs. Basic (₹499/month) includes daily milk delivery, Standard (₹899/month) adds ghee and curd delivery, and Premium (₹1499/month) includes all products plus exclusive benefits.',
+      options: ['View All Plans', 'Subscribe Now'],
       action: () => navigate('/premium')
     },
     'vendors': {
@@ -87,23 +106,44 @@ const Chatbot = () => {
 
     // General FAQs
     'delivery': {
-      response: 'We offer daily milk delivery services. Premium subscribers get priority delivery slots and can customize their delivery schedule.'
+      response: 'We offer daily milk delivery services. Premium subscribers get priority delivery slots and can customize their delivery schedule.',
+      animation: 'delivery' // New animation trigger
     },
     'payment': {
-      response: 'We accept various payment methods including credit/debit cards, UPI, and cash on delivery.'
+      response: 'We accept various payment methods through Razorpay including credit/debit cards, UPI, net banking, and wallets. All transactions are secure and encrypted.',
+      options: ['Online Payment', 'Payment Security', 'Subscription Payment']
     },
-    'subscription': {
-      response: 'We offer different subscription plans for regular milk delivery. Would you like to check our premium plans?',
-      action: () => navigate('/premium')
+    'payment method': {
+      response: 'We use Razorpay as our payment gateway. It supports credit/debit cards, UPI, net banking, and wallets. All transactions are secure and encrypted.',
+      options: ['Payment Security', 'How to Pay', 'Refund Policy']
+    },
+    'razorpay': {
+      response: 'We use Razorpay as our payment gateway. It \'s secure, reliable, and supports multiple payment methods including cards, UPI, and net banking.',
+      options: ['Payment Security', 'How to Pay', 'Payment Issues']
     },
     'cancel': {
       response: 'You can pause or cancel your subscription anytime from your account settings.'
     },
     'quality': {
-      response: 'We ensure the highest quality of milk by sourcing from certified vendors and conducting regular quality checks.'
+      response: 'We ensure the highest quality of milk by sourcing from certified vendors and conducting regular quality checks.',
+      animation: 'quality' // New animation trigger
     },
     'help': {
-      response: 'I can help you with navigation, account creation, finding vendors, and answering common questions. What would you like to know?'
+      response: 'I can help you with navigation, account creation, finding vendors, and answering common questions. What would you like to know?',
+      suggestions: ['Products', 'Delivery', 'Payment', 'Quality'] // New suggestions
+    },
+    // New responses for enhanced functionality
+    'nutrition': {
+      response: 'Our dairy products are rich in calcium, protein, and essential vitamins. A glass of milk contains approximately 300mg of calcium and 8g of protein.',
+      animation: 'nutrition' // New animation trigger
+    },
+    'organic': {
+      response: 'Yes, we offer organic milk options sourced from farms that follow organic farming practices without the use of antibiotics or hormones.',
+      animation: 'organic' // New animation trigger
+    },
+    'feedback': {
+      response: 'We value your feedback! Please share your experience with our products or service.',
+      feedback: true // New feedback feature
     }
   };
 
@@ -130,11 +170,15 @@ const Chatbot = () => {
         {
           text: 'Hello! I\'m your dairy assistant. How can I help you today?',
           sender: 'bot',
-          options: ['Products', 'Create Account', 'Best Vendors', 'Help']
+          options: ['Products', 'Create Account', 'Best Vendors', 'Help'],
+          avatar: botAvatar // New avatar property
         }
       ]);
+      
+      // Set initial suggestions
+      setSuggestions(['Products', 'Delivery', 'Quality', 'Feedback']);
     }
-  }, [isOpen, messages.length]);
+  }, [isOpen, messages.length, botAvatar]);
   
   // Save conversation to backend
   const saveConversation = async (message) => {
@@ -190,12 +234,14 @@ const Chatbot = () => {
           text: `Here are the top vendors for ${category}:`,
           sender: 'bot',
           vendorsList: vendorsList,
-          action: () => navigate('/vendor')
+          action: () => navigate('/vendor'),
+          avatar: botAvatar // New avatar property
         }]);
       } else {
         setMessages(prev => [...prev, {
           text: `Sorry, we couldn't find any vendors for ${category} at the moment.`,
-          sender: 'bot'
+          sender: 'bot',
+          avatar: botAvatar // New avatar property
         }]);
       }
     } catch (error) {
@@ -203,7 +249,8 @@ const Chatbot = () => {
       setIsLoading(false);
       setMessages(prev => [...prev, {
         text: 'Sorry, there was an error finding vendors. Please try again later.',
-        sender: 'bot'
+        sender: 'bot',
+        avatar: botAvatar // New avatar property
       }]);
     }
   };
@@ -232,7 +279,8 @@ const Chatbot = () => {
           text: 'Here are the steps to create a new account:',
           sender: 'bot',
           steps: steps,
-          action: () => navigate('/register')
+          action: () => navigate('/register'),
+          avatar: botAvatar // New avatar property
         }]);
       }
     } catch (error) {
@@ -252,8 +300,38 @@ const Chatbot = () => {
         text: 'Here are the steps to create a new account:',
         sender: 'bot',
         steps: fallbackSteps,
-        action: () => navigate('/register')
+        action: () => navigate('/register'),
+        avatar: botAvatar // New avatar property
       }]);
+    }
+  };
+
+  // Handle animation display
+  const handleAnimation = (animationType) => {
+    setShowAnimation(animationType);
+    setTimeout(() => setShowAnimation(false), 3000); // Hide animation after 3 seconds
+  };
+
+  // Fetch AI response from backend
+  const fetchAIResponse = async (userMessage) => {
+    try {
+      // Call the backend AI endpoint
+      const response = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_BASE_URL}/api/chatbot/ai-response`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ 
+          message: userMessage, 
+          sessionId,
+          userId: LoginUser?._id || 'anonymous'
+        })
+      });
+      
+      const data = await response.json();
+      return data.success ? data.response : data.fallbackResponse || "I'm not sure I understand. Would you like to know about our products, creating an account, or finding the best vendors?";
+    } catch (error) {
+      console.error('Error fetching AI response:', error);
+      return "I'm having trouble connecting right now. Would you like to know about our products, creating an account, or finding the best vendors?";
     }
   };
 
@@ -275,8 +353,43 @@ const Chatbot = () => {
     setTimeout(async () => {
       let responded = false;
       
+      // Handle premium subscription queries
+      if (userInput.includes('premium') || userInput.includes('subscription') || 
+          userInput.includes('subscribe') || userInput.includes('plan')) {
+        const response = {
+          text: "We offer three subscription plans: Basic (₹499/month), Standard (₹899/month), and Premium (₹1499/month). Each plan includes different benefits like milk delivery, ghee delivery, curd delivery, and exclusive products. Would you like to view our premium page?",
+          sender: 'bot',
+          options: ['View Premium Plans', 'Plan Benefits', 'Payment Options'],
+          avatar: botAvatar
+        };
+        
+        setMessages(prev => [...prev, response]);
+        await saveConversation(response);
+        
+        // Navigate to premium page if requested
+        if (userInput.includes('view') || userInput.includes('show me')) {
+          setTimeout(() => navigate('/premium'), 1500);
+        }
+        responded = true;
+      }
+      
+      // Handle payment related queries
+      else if (userInput.includes('payment') || userInput.includes('pay') || 
+               userInput.includes('razorpay')) {
+        const response = {
+          text: "We accept payments through Razorpay, which supports credit/debit cards, UPI, net banking, and wallets. All transactions are secure and encrypted. Would you like to know more about our payment process?",
+          sender: 'bot',
+          options: ['Payment Methods', 'Subscription Payment', 'Payment Security'],
+          avatar: botAvatar
+        };
+        
+        setMessages(prev => [...prev, response]);
+        await saveConversation(response);
+        responded = true;
+      }
+      
       // Special handling for complex queries
-      if (userInput.includes('best vendor') || userInput.includes('top vendor') || 
+      else if (userInput.includes('best vendor') || userInput.includes('top vendor') || 
           userInput.includes('recommended vendor') || userInput.includes('good vendor')) {
         // Determine product category
         let category = 'milk'; // Default
@@ -294,11 +407,54 @@ const Chatbot = () => {
         await fetchAccountSteps();
         responded = true;
       }
+      // New handling for nutrition information
+      else if (userInput.includes('nutrition') || userInput.includes('nutritional') || 
+               userInput.includes('healthy') || userInput.includes('health benefits')) {
+        const response = { 
+          text: botResponses.nutrition.response, 
+          sender: 'bot',
+          avatar: botAvatar
+        };
+        setMessages(prev => [...prev, response]);
+        await saveConversation(response);
+        handleAnimation('nutrition');
+        responded = true;
+      }
+      // New handling for organic products
+      else if (userInput.includes('organic') || userInput.includes('natural') || 
+               userInput.includes('chemical free')) {
+        const response = { 
+          text: botResponses.organic.response, 
+          sender: 'bot',
+          avatar: botAvatar
+        };
+        setMessages(prev => [...prev, response]);
+        await saveConversation(response);
+        handleAnimation('organic');
+        responded = true;
+      }
+      // New handling for feedback
+      else if (userInput.includes('feedback') || userInput.includes('review') || 
+               userInput.includes('suggestion') || userInput.includes('complain')) {
+        const response = { 
+          text: botResponses.feedback.response, 
+          sender: 'bot',
+          feedback: true,
+          avatar: botAvatar
+        };
+        setMessages(prev => [...prev, response]);
+        await saveConversation(response);
+        responded = true;
+      }
       else {
         // Check for keyword matches in predefined responses
         for (const [key, value] of Object.entries(botResponses)) {
           if (userInput.includes(key)) {
-            const response = { text: value.response, sender: 'bot' };
+            const response = { 
+              text: value.response, 
+              sender: 'bot',
+              avatar: botAvatar // New avatar property
+            };
             
             // Add options if available
             if (value.options) {
@@ -308,6 +464,22 @@ const Chatbot = () => {
             // Add steps if available
             if (value.steps) {
               response.steps = value.steps;
+            }
+
+            // Add suggestions if available
+            if (value.suggestions) {
+              response.suggestions = value.suggestions;
+              setSuggestions(value.suggestions);
+            }
+
+            // Add animation if available
+            if (value.animation) {
+              handleAnimation(value.animation);
+            }
+
+            // Add feedback form if available
+            if (value.feedback) {
+              response.feedback = true;
             }
             
             setMessages(prev => [...prev, response]);
@@ -328,18 +500,39 @@ const Chatbot = () => {
         }
       }
       
-      // Default response if no match found
+      // If no predefined response matched, use AI-powered response
       if (!responded) {
-        const defaultResponse = {
-          text: "I'm not sure I understand. Would you like to know about our products, creating an account, or finding the best vendors?",
-          sender: 'bot',
-          options: ['Products', 'Create Account', 'Best Vendors']
-        };
-        
-        setMessages(prev => [...prev, defaultResponse]);
-        
-        // Save default response to backend
-        await saveConversation(defaultResponse);
+        try {
+          // Get AI response using the fetchAIResponse function
+          const aiResponseText = await fetchAIResponse(text);
+          
+          // Use the AI-generated response
+          const botResponse = {
+            text: aiResponseText,
+            sender: 'bot',
+            avatar: botAvatar
+          };
+          
+          setMessages(prev => [...prev, botResponse]);
+          
+          // Save AI response to backend
+          await saveConversation(botResponse);
+        } catch (error) {
+          console.error('Error getting AI response:', error);
+          
+          // Fallback response in case of error
+          const errorResponse = {
+            text: "I'm having trouble connecting right now. Would you like to know about our products, creating an account, or finding the best vendors?",
+            sender: 'bot',
+            options: ['Products', 'Create Account', 'Best Vendors'],
+            avatar: botAvatar
+          };
+          
+          setMessages(prev => [...prev, errorResponse]);
+          
+          // Save error response to backend
+          await saveConversation(errorResponse);
+        }
       }
       
       setIsLoading(false);
@@ -358,22 +551,40 @@ const Chatbot = () => {
     processMessage(option);
   };
 
+  const handleSuggestionClick = (suggestion) => {
+    processMessage(suggestion);
+  };
+
   const toggleChat = () => {
     setIsOpen(!isOpen);
   };
 
+  // New function to handle feedback submission
+  const handleFeedbackSubmit = (rating, comment) => {
+    setMessages(prev => [...prev, {
+      text: `Thank you for your feedback! You rated us ${rating}/5 stars.`,
+      sender: 'bot',
+      avatar: botAvatar
+    }]);
+  };
+
   return (
     <div className="chatbot-container">
-      {/* Chat toggle button */}
+      {/* Chat toggle button with animation */}
       <button 
-        className="chat-toggle-btn" 
+        className={`chat-toggle-btn ${!isOpen && 'pulse-animation'}`}
         onClick={toggleChat}
         aria-label="Toggle chat"
       >
         {isOpen ? (
           <span className="close-icon">×</span>
         ) : (
-          <span className="chat-icon">💬</span>
+          <img 
+            src="/robot.svg" 
+            alt="Robot chat icon" 
+            className="robot-icon"
+            style={{ width: '30px', height: '30px', animation: 'bounce 2s infinite' }}
+          />
         )}
       </button>
 
@@ -390,8 +601,24 @@ const Chatbot = () => {
           </div>
           
           <div className="messages-container">
+            {/* Animation container */}
+            {showAnimation && (
+              <div className={`animation-container ${showAnimation}-animation`}>
+                <img 
+                  src={`/${showAnimation}.png`} 
+                  alt={`${showAnimation} animation`} 
+                  className="animation-image"
+                />
+              </div>
+            )}
+
             {messages.map((message, index) => (
               <div key={index} className={`message ${message.sender}`}>
+                {message.sender === 'bot' && message.avatar && (
+                  <div className="avatar-container">
+                    <img src={message.avatar} alt="Bot" className="bot-avatar" />
+                  </div>
+                )}
                 <div className="message-content">
                   {message.text}
                   
@@ -433,6 +660,23 @@ const Chatbot = () => {
                       ))}
                     </div>
                   )}
+
+                  {/* Display feedback form if available */}
+                  {message.feedback && (
+                    <div className="feedback-container">
+                      <div className="rating-stars">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <span 
+                            key={star} 
+                            className="star"
+                            onClick={() => handleFeedbackSubmit(star, '')}
+                          >
+                            ⭐
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -440,6 +684,9 @@ const Chatbot = () => {
             {/* Loading indicator */}
             {isLoading && (
               <div className="message bot">
+                <div className="avatar-container">
+                  <img src={botAvatar} alt="Bot" className="bot-avatar" />
+                </div>
                 <div className="message-content loading">
                   <div className="typing-indicator">
                     <span></span>
@@ -453,6 +700,21 @@ const Chatbot = () => {
             <div ref={messagesEndRef} />
           </div>
           
+          {/* Quick suggestions */}
+          {suggestions.length > 0 && (
+            <div className="suggestions-container">
+              {suggestions.map((suggestion, index) => (
+                <button
+                  key={index}
+                  className="suggestion-chip"
+                  onClick={() => handleSuggestionClick(suggestion)}
+                >
+                  {suggestion}
+                </button>
+              ))}
+            </div>
+          )}
+
           <form className="chat-input-form" onSubmit={handleSubmit}>
             <input
               type="text"
@@ -463,7 +725,7 @@ const Chatbot = () => {
               disabled={isLoading}
             />
             <button type="submit" className="send-btn" disabled={isLoading || !inputValue.trim()}>
-              {isLoading ? '...' : 'Send'}
+              {isLoading ? '...' : '➤'}
             </button>
           </form>
         </div>

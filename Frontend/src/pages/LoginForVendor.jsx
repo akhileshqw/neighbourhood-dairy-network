@@ -5,11 +5,13 @@ import { useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { userContext } from "../context/userContext";
 import { Bounce, ToastContainer, toast } from "react-toastify";
+import { ClipLoader } from "react-spinners";
 
 const LoginForVendor = () => {
   const [resMessage, setresMessage] = useState({});
   const [visible, setVisible] = useState(false);
-    const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
   
   const { setLoginUser } = useContext(userContext);
   
@@ -75,30 +77,38 @@ const LoginForVendor = () => {
   };
   const onSubmit = async (data) => {
     // reset();
+    setLoading(true);
     console.log(data);
-    let response = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_BASE_URL}/login-vendor`, {
-      method: "POST",
+    try {
+      let response = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_BASE_URL}/login-vendor`, {
+        method: "POST",
 
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
 
-      body: JSON.stringify(data),
-    });
-    let content = await response.json();
-    // console.log("in the cone");
-    // console.log(content);
-    setresMessage(content);
-    if (content.success) {
-      // accountCreated();
-      setLoginUser(content.user);
-      notifyAndRedirect("Login Successful...", "/");
-    } else {
-      // failed(content.msg);
-      failureToast(content.msg);
+        body: JSON.stringify(data),
+      });
+      let content = await response.json();
+      // console.log("in the cone");
+      // console.log(content);
+      setresMessage(content);
+      if (content.success) {
+        // accountCreated();
+        setLoginUser(content.user);
+        notifyAndRedirect("Login Successful...", "/");
+      } else {
+        // failed(content.msg);
+        failureToast(content.msg);
 
-      resetField("password")
+        resetField("password")
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      failureToast("An error occurred during login. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
    
@@ -190,12 +200,12 @@ const LoginForVendor = () => {
 
                 {/* Links */}
                 <div className="d-flex flex-column mb-4">
-                  <a
-                    href="#"
+                  <Link
+                    to="/forgot-password"
                     className="text-primary text-decoration-none mb-2"
                   >
                     Forgot Password?
-                  </a>
+                  </Link>
                   <Link
                     to="/login-customer"
                     className="text-primary text-decoration-none"
@@ -213,8 +223,16 @@ const LoginForVendor = () => {
                     fontSize: "16px",
                     borderRadius: "8px",
                   }}
+                  disabled={loading}
                 >
-                  Login
+                  {loading ? (
+                    <>
+                      <ClipLoader size={15} color={"#ffffff"} loading={loading} />
+                      <span className="ml-2"> Logging in...</span>
+                    </>
+                  ) : (
+                    "Login"
+                  )}
                 </button>
               </form>
             </div>

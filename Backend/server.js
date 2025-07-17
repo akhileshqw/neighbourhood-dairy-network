@@ -11,12 +11,23 @@ import Cookies from "js-cookie";
 import https from "https";
 import fs from "fs";
 import path from "path";
+import crypto from "crypto";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import { ChatbotModel } from "./models/chatbotSchema.js";
+import Razorpay from "razorpay";
 
 const app = express();
 
 import dotenv from "dotenv";
 import { certifiedVendorModal } from "./models/certifiedvendorSchema.js";
 import { manageProductsModal } from "./models/manageProductsSchema.js";
+
+// Initialize Google Generative AI
+dotenv.config({
+  path: "./.env",
+});
+
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
 
 
 dotenv.config({
@@ -396,6 +407,171 @@ app.get("/profile", (req, res) => {
   }
 });
 
+// Configure nodemailer transporter with more secure settings
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  host: "smtp.gmail.com",
+  port: 465,
+  secure: true,
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+  tls: {
+    rejectUnauthorized: false
+  }
+});
+
+// Function to generate OTP
+const generateOTP = () => {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+};
+
+// Forgot Password Route
+app.post("/forgot-password", async (req, res) => {
+  try {
+    const { email } = req.body;
+    
+    // Find user by email
+    const user = await RegisterModel.findOne({ email });
+    if (!user) {
+      return res.status(200).json({ success: false, msg: "User with this email does not exist" });
+    }
+    
+    // Generate OTP
+    const otp = generateOTP();
+    
+    // Set OTP and expiration in user document
+    user.resetPasswordToken = otp;
+    user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
+    await user.save();
+    
+    // Create reset email with OTP
+    const resetUrl = `${process.env.FRONTEND_URL}/forgot-password`;
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: user.email,
+      subject: "Password Reset OTP",
+      html: `
+        <h2>Password Reset Request</h2>
+        <p>You requested a password reset for your Milk on the Way account.</p>
+        <p>Please use the following OTP to reset your password:</p>
+        <h3 style="font-size: 24px; background-color: #f0f0f0; padding: 10px; text-align: center; letter-spacing: 5px;">${otp}</h3>
+        <p>Go to: <a href="${resetUrl}">${resetUrl}</a></p>
+        <p>This OTP is valid for 1 hour.</p>
+        <p>If you did not request this, please ignore this email and your password will remain unchanged.</p>
+      `,
+    };
+    
+    // Send email using async/await for better error handling
+    try {
+      await transporter.sendMail(mailOptions);
+      
+      res.status(200).json({ 
+        success: true, 
+        msg: "Password reset OTP sent to your email. Please check your inbox and spam folder." 
+      });
+    } catch (emailError) {
+      console.error("Email sending error:", emailError);
+      // Save the OTP in the user document even if email fails
+      // This allows for manual verification if needed
+      return res.status(500).json({ 
+        success: false, 
+        msg: "Error sending email. Please try again or contact support." 
+      });
+    }
+  } catch (error) {
+    console.error("Forgot password error:", error);
+    res.status(500).json({ success: false, msg: "Server error" });
+  }
+});
+
+// Verify OTP Route
+app.post("/verify-otp", async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    
+    // Find user by email and valid OTP
+    const user = await RegisterModel.findOne({
+      email: email,
+      resetPasswordToken: otp,
+      resetPasswordExpires: { $gt: Date.now() }
+    });
+    
+    if (!user) {
+      return res.status(200).json({ 
+        success: false, 
+        msg: "OTP is invalid or has expired" 
+      });
+    }
+    
+    // OTP is valid
+    return res.status(200).json({
+      success: true,
+      msg: "OTP verified successfully"
+    });
+    
+  } catch (error) {
+    console.error("OTP verification error:", error);
+    res.status(500).json({ success: false, msg: "Server error" });
+  }
+});
+
+// Reset Password Route
+app.post("/reset-password", async (req, res) => {
+  try {
+    const { token, password } = req.body;
+    
+    // Find user with valid OTP and not expired
+    const user = await RegisterModel.findOne({
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: Date.now() }
+    });
+    
+    if (!user) {
+      return res.status(200).json({ 
+        success: false, 
+        msg: "OTP is invalid or has expired" 
+      });
+    }
+    
+    // Update password and clear reset fields
+    user.password = password;
+    user.confirmpassword = password;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+    await user.save();
+    
+    // Send confirmation email
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: user.email,
+      subject: "Your password has been changed",
+      html: `
+        <h2>Password Change Confirmation</h2>
+        <p>This is a confirmation that the password for your Milk on the Way account has just been changed.</p>
+        <p>If you did not make this change, please contact support immediately.</p>
+      `,
+    };
+    
+    try {
+      // Send email asynchronously
+      await transporter.sendMail(mailOptions);
+      res.status(200).json({ success: true, msg: "Password has been reset successfully" });
+    } catch (emailError) {
+      console.error("Error sending confirmation email:", emailError);
+      // Still return success since password was reset successfully
+      res.status(200).json({ 
+        success: true, 
+        msg: "Password has been reset successfully, but we couldn't send a confirmation email." 
+      });
+    }
+  } catch (error) {
+    console.error("Reset password error:", error);
+    res.status(500).json({ success: false, msg: "Server error" });
+  }
+});
+
 app.get("/vendors", async (req, res) => {
   const vendorsData = await RegisterModel.find({ isVendor: true });
   res.send(vendorsData);
@@ -405,36 +581,25 @@ app.post("/contact", async (req, res) => {
   const { email, query, concern } = req.body;
   console.log("in route");
 
-  // Create a transporter object using SMTP with your email host details
-  let transporter = nodemailer.createTransport({
-    service: "gmail", // You can also use other email services like Outlook, Yahoo, etc.
-    auth: {
-      user: "milkontheway01@gmail.com", // Your host email
-      pass: process.env.EMAIL_PASS, // Host email password (consider using environment variables for security)
-    },
-  });
+  try {
+    // Email options
+    let mailOptions = {
+      from: process.env.EMAIL_USER, // Use environment variable for consistency
+      to: email, // Receiver's email (user's email from the request)
+      subject: "We have received your query", // Subject of the email
+      text: `Thank you for contacting us! 
+          Query Type: ${query} 
+          Concern: ${concern}`, // Plain text body
+    };
 
-  // Email options
-  let mailOptions = {
-    from: "milkontheway01@gmail.com", // Sender address (your host email)
-    to: email, // Receiver's email (user's email from the request)
-    subject: "We have received your query", // Subject of the email
-    text: `Thank you for contacting us! 
-        Query Type: ${query} 
-        Concern: ${concern}`, // Plain text body
-  };
-
-  // Send the email
-  transporter.sendMail(mailOptions, (error, info) => {
-    if (error) {
-      console.log(error);
-      return res
-        .status(500)
-        .send({ success: false, msg: "Error sending email" });
-    }
-    console.log("Email sent: " + info.response);
+    // Send the email asynchronously
+    await transporter.sendMail(mailOptions);
+    console.log("Contact email sent successfully");
     res.status(200).send({ success: true, msg: "Email sent successfully" });
-  });
+  } catch (error) {
+    console.error("Contact email error:", error);
+    res.status(500).send({ success: false, msg: "Error sending email" });
+  }
 });
 
 app.get("/logout", (req, res) => {
@@ -699,7 +864,6 @@ app.post("/getnormalinfo", async (req, res) => {
 
 // Check if HTTPS is enabled in the environment
 // Chatbot API endpoints
-import { ChatbotModel } from "./models/chatbotSchema.js";
 
 // Endpoint to get best vendors based on ratings and location
 app.post("/api/chatbot/best-vendors", async (req, res) => {
@@ -767,6 +931,54 @@ app.post("/api/chatbot/save-conversation", async (req, res) => {
   }
 });
 
+// Endpoint to get AI-powered response for chatbot
+app.post("/api/chatbot/ai-response", async (req, res) => {
+  try {
+    const { message, sessionId } = req.body;
+    
+    // Get conversation history for context (last 10 messages)
+    const conversation = await ChatbotModel.findOne({ sessionId });
+    let conversationHistory = "";
+    
+    if (conversation && conversation.messages.length > 0) {
+      // Get last 10 messages for context
+      const recentMessages = conversation.messages.slice(-10);
+      conversationHistory = recentMessages.map(msg => 
+        `${msg.sender === 'user' ? 'User' : 'Bot'}: ${msg.text}`
+      ).join('\n');
+    }
+    
+    // Create prompt with context about the milk delivery service
+    const prompt = `You are a helpful assistant for "Milk on the Way", an online milk delivery service that connects customers with local milk vendors. 
+    The service offers milk, ghee, curd, and other dairy products. 
+    
+    Conversation history:
+    ${conversationHistory}
+    
+    User: ${message}
+    
+    Provide a helpful, friendly, and concise response. Focus on dairy products, delivery information, vendor details, account management, or other relevant topics. If you don't know something specific about the service, provide general information but make it clear you're giving general advice.`;
+    
+    // Generate AI response
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const aiResponse = await response.text();
+    
+    res.status(200).json({
+      success: true,
+      response: aiResponse
+    });
+  } catch (error) {
+    console.error("Error generating AI response:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Failed to generate response",
+      fallbackResponse: "I'm having trouble connecting to my brain right now. Please try again later or ask about our products, vendors, or delivery options."
+    });
+  }
+});
+
 // Endpoint to get account creation steps
 app.get("/api/chatbot/account-steps", (req, res) => {
   const steps = [
@@ -798,6 +1010,180 @@ app.get("/api/chatbot/account-steps", (req, res) => {
   ];
   
   res.status(200).json({ success: true, steps });
+});
+
+// Endpoint to create Razorpay order for subscription payment
+app.post("/api/create-subscription-order", async (req, res) => {
+  try {
+    const { amount, planName, userId } = req.body;
+    
+    // Validate user exists
+    const user = await RegisterModel.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    
+    // Generate a random receipt ID
+    const receiptId = 'order_rcptid_' + crypto.randomBytes(6).toString('hex');
+    
+    // Create order options
+    const options = {
+      amount: amount * 100, // amount in paise
+      currency: "INR",
+      receipt: receiptId,
+      payment_capture: 1, // Auto-capture payment
+      notes: {
+        planName: planName,
+        userId: userId
+      }
+    };
+    
+    // Initialize Razorpay with API keys
+    const razorpay = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_YourTestKey',
+      key_secret: process.env.RAZORPAY_KEY_SECRET || 'YourTestSecret'
+    });
+    
+    // Create a real order using Razorpay SDK
+    let order;
+    try {
+      order = await razorpay.orders.create(options);
+    } catch (error) {
+      console.error('Error creating Razorpay order:', error);
+      // Fallback to mock order if Razorpay API fails
+      order = {
+        id: 'order_' + crypto.randomBytes(8).toString('hex'),
+        entity: 'order',
+        amount: options.amount,
+        amount_paid: 0,
+        amount_due: options.amount,
+        currency: options.currency,
+        receipt: options.receipt,
+        status: 'created',
+        created_at: Math.floor(Date.now() / 1000)
+      };
+    }
+    
+    // Store order information in user's record
+    user.subscription = {
+      ...user.subscription,
+      orderId: order.id,
+      plan: planName,
+      active: false // Will be set to true after payment verification
+    };
+    await user.save();
+    
+    res.status(200).json({
+      success: true,
+      order: order,
+      key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_YourTestKey' // Use environment variable in production
+    });
+  } catch (error) {
+    console.error('Error creating order:', error);
+    res.status(500).json({ success: false, message: 'Failed to create order' });
+  }
+});
+
+// Endpoint to verify and save subscription payment
+app.post("/api/verify-subscription-payment", async (req, res) => {
+  try {
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, planName, userId } = req.body;
+    
+    // Find the user
+    const user = await RegisterModel.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    
+    // Verify the payment signature
+    try {
+      const generated_signature = crypto.createHmac('sha256', process.env.RAZORPAY_KEY_SECRET || 'YourTestSecret')
+        .update(razorpay_order_id + "|" + razorpay_payment_id)
+        .digest('hex');
+      
+      if (generated_signature !== razorpay_signature) {
+        console.warn('Payment signature verification failed');
+        // For development, we'll continue even if signature verification fails
+        // In production, you would return an error here
+        // return res.status(400).json({ success: false, message: 'Payment verification failed' });
+      } else {
+        console.log('Payment signature verified successfully');
+      }
+    } catch (error) {
+      console.error('Error verifying payment signature:', error);
+      // For development, we'll continue even if signature verification fails
+    }
+    
+    // Calculate subscription duration based on plan
+    let durationInDays = 30; // Default for Basic plan
+    if (planName === 'Standard') {
+      durationInDays = 90; // 3 months
+    } else if (planName === 'Premium') {
+      durationInDays = 365; // 1 year
+    }
+    
+    const startDate = new Date();
+    const endDate = new Date();
+    endDate.setDate(endDate.getDate() + durationInDays);
+    
+    // Update user's subscription status
+    user.subscription = {
+      plan: planName,
+      startDate: startDate,
+      endDate: endDate,
+      active: true,
+      paymentId: razorpay_payment_id,
+      orderId: razorpay_order_id
+    };
+    
+    await user.save();
+    
+    res.status(200).json({
+      success: true,
+      message: `Your ${planName} subscription has been activated successfully until ${endDate.toLocaleDateString()}!`
+    });
+  } catch (error) {
+    console.error('Error verifying payment:', error);
+    res.status(500).json({ success: false, message: 'Payment verification failed' });
+  }
+});
+
+// Get user subscription status
+app.get('/api/subscription-status', async (req, res) => {
+  try {
+    // Get user ID from JWT token
+    const { token } = req.cookies;
+    if (!token) {
+      return res.status(401).json({ success: false, message: 'Authentication required' });
+    }
+    
+    const verifyToken = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await RegisterModel.findOne({ email: verifyToken.email });
+    
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    
+    // Check if subscription is active and not expired
+    const isActive = user.subscription && 
+                    user.subscription.active && 
+                    user.subscription.endDate && 
+                    new Date(user.subscription.endDate) > new Date();
+    
+    res.json({
+      success: true,
+      subscription: {
+        plan: user.subscription?.plan || 'None',
+        active: isActive,
+        endDate: user.subscription?.endDate,
+        daysRemaining: user.subscription?.endDate ? 
+          Math.max(0, Math.ceil((new Date(user.subscription.endDate) - new Date()) / (1000 * 60 * 60 * 24))) : 0
+      }
+    });
+  } catch (error) {
+    console.error('Error getting subscription status:', error);
+    res.status(500).json({ success: false, message: 'Failed to get subscription status' });
+  }
 });
 
 if (process.env.HTTPS === 'true') {

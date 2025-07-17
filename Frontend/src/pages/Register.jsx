@@ -8,6 +8,7 @@ import { userContext } from "../context/userContext";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import {   useNavigate } from "react-router-dom";
 import { useToast } from "../context/ToastContext.jsx";
+import { ClipLoader } from "react-spinners";
 
 
 
@@ -234,52 +235,64 @@ const Register = () => {
 
   const onSubmit = async (data) => {
     // Always include rating, default to null if not a vendor
-    setSpinner(true)
+    setSpinner(true);
     data.rating = isVendor ? 1 : null;
 
-    // console.log("Data to be address:", data.address); // Debug log
-   let ob= await giveCoordinates(data.address)
- 
-   
-       
-     
-    
-if(ob!=undefined){
-  data.lat=ob[0]
-    data.lng=ob[1]
-    
-    console.log("Data to be sent:", data);
     try {
+      // Get coordinates from address
+      let ob = await giveCoordinates(data.address).catch(error => {
+        console.error("Error getting coordinates:", error);
+        return null;
+      });
+      
+      // If coordinates were found, add them to data
+      if (ob) {
+        data.lat = ob[0];
+        data.lng = ob[1];
+      } else {
+        // Use default coordinates if none found
+        data.lat = 0;
+        data.lng = 0;
+      }
+      
+      console.log("Data to be sent:", data);
+      
+      // Ensure password and confirmpassword match
+      if (data.password !== data.confirmpassword) {
+        failedd("Passwords do not match");
+        setSpinner(false);
+        return;
+      }
+      
+      // Send registration request
       let response = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_BASE_URL}/createaccount`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        //main line
         credentials: "include",
         body: JSON.stringify(data),
       });
+      
       let content = await response.json();
       console.log("Server response:", content);
-      // setSpinner((prev)=>!prev)
-      setStopSpinner(true)
+      
+      setStopSpinner(true);
       setresMessage(content);
-      setSpinner(false)
+      setSpinner(false);
 
       if (content.success) {
         accountCreatedd();
         setLoginUser(content.user);
       } else {
-        failedd(content.msg);
+        failedd(content.msg || "Failed to create account");
       }
     } catch (error) {
       console.error("Error during API request:", error);
-      failedd(error);
+      failedd(error.message || "An error occurred during registration");
+      setSpinner(false);
     }
-  }else{
-    alert("failed to fetch location try again later ...")
-  }
- 
+    
     SetIsVendor(false);
   };
 
@@ -572,15 +585,21 @@ if(ob!=undefined){
                   </div>
                 )}
                 <fieldset className="row mb-3"></fieldset>
-                <div className="btn btn-primary" style={{width:"125px",height:"42px",display:"flex",alignItems:"center",justifyContent:"center"}}>
-                <input
-                  className="butt btn btn-primary"
-                  style={{ margin: "inherit" }}
+                <button
+                  className="btn btn-primary"
+                  style={{ margin: "inherit", minWidth: "120px" }}
                   type="submit"
-                  defaultValue="Submit"
-                />
-              { ( spinner && !stopSpinner)&&  <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>} 
-                </div>
+                  disabled={spinner && !stopSpinner}
+                >
+                  {spinner && !stopSpinner ? (
+                    <>
+                      <ClipLoader size={15} color={"#ffffff"} loading={spinner && !stopSpinner} />
+                      <span className="ml-2"> Submitting...</span>
+                    </>
+                  ) : (
+                    "Submit"
+                  )}
+                </button>
                
                 <div
                   className="container mb-4 d-flex"

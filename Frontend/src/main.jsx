@@ -12,6 +12,7 @@ import Contact from "./pages/Contact.jsx";
 import Register from "./pages/Register.jsx";
 import LoginForCustomer from "./pages/LoginForCustomer.jsx";
 import LoginForVendor from "./pages/LoginForVendor.jsx";
+import ForgotPassword from "./pages/ForgotPassword.jsx";
 import { UserContextProvider } from "./context/userContext.jsx";
 import Milk from "./pages/Milk.jsx";
 import Vendor from "./components/Vendor.jsx";
@@ -27,6 +28,7 @@ import RatingList from "./components/RatingList.jsx";
 import Verify from "./components/BecomeCertifiedVendor.jsx";
 import Manage from "./components/Manage.jsx";
 import AboutVendor from "./components/AboutVendor.jsx";
+import Account from "./pages/Account.jsx";
 import { ToastProvider } from "./context/ToastContext.jsx";
 const router = createBrowserRouter([
   {
@@ -41,6 +43,7 @@ const router = createBrowserRouter([
       { path: "/register", element: <Register /> },
       { path: "/login-customer", element: <LoginForCustomer /> },
       { path: "/login-vendor", element: <LoginForVendor /> },
+      { path: "/forgot-password", element: <ForgotPassword /> },
       { path: "/vendor", element: <Vendor /> },
       { path: "/ghee", element: <Ghee /> },
       { path: "/curd", element: <Curd /> },
@@ -51,6 +54,7 @@ const router = createBrowserRouter([
       {path:"/manage-products",element:<Manage/>},
       {path:"/aboutvendor",element:<AboutVendor/>},
       {path:"/premium",element:<Premium/>},
+      {path:"/account",element:<Account/>},
       
     ],
   },

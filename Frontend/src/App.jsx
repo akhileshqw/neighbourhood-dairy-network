@@ -33,10 +33,10 @@ import { Link, useNavigate } from "react-router-dom";
 
 function App() {
   const navigate = useNavigate();
-  const [iconsLoaded, setIconsLoaded] = React.useState(false);
-  
+  const [iconsLoaded, setIconsLoaded] = useState(false);
+
   // Preload social media icons when component mounts
-  React.useEffect(() => {
+  useEffect(() => {
     const loadImages = async () => {
       try {
         await Promise.all(socialIcons.map(src => {
@@ -253,6 +253,7 @@ function App() {
                 className="col-md-6 col-md-offset-3 vm"
                 onClick={() => navigate("/about")}
               >
+              
                 <div className="readmore-wraper text-center" style={{cursor:"pointer"}} onClick={()=>navigate("/about")}>
                   <span className="readmore-btn"  tabIndex={-1}>
                     <span style={{ color: "white" }}>View More</span>
@@ -267,14 +268,12 @@ function App() {
           </div>
           <div className="row">
             <div className="col-12">
-              <img
-              
-                src="http://www.heritagefoods.in/static/images/cowandcalf.png"
-                className="img-fluid"
-                alt="Cow and Calf"
-              />
+                <img
+                  src="./public/cowandcalf.png"
+                  className="img-fluid"
+                  alt="Cow and Calf"
+                />
             </div>
-
           </div>
         </div>
       </div>
@@ -320,7 +319,7 @@ function App() {
             >
               <Link to="#">
                 <img 
-                  src="https://www.heritagefoods.in/static/images/fb.png" 
+                  src="./public/fbb" 
                   width="30" 
                   height="30" 
                   alt="Facebook" 
@@ -345,7 +344,7 @@ function App() {
             >
               <Link to="#">
                 <img 
-                  src="https://www.heritagefoods.in/static/images/tw.png" 
+                  src="./public/twitter.svg" 
                   width="30" 
                   height="30" 
                   alt="Twitter" 
@@ -370,7 +369,7 @@ function App() {
             >
               <Link to="#">
                 <img 
-                  src="https://www.heritagefoods.in/static/images/lk.png" 
+                  src="./public/insta.svg" 
                   width="30" 
                   height="30" 
                   alt="LinkedIn" 
@@ -395,7 +394,7 @@ function App() {
             >
               <Link to="#">
                 <img 
-                  src="https://www.heritagefoods.in/static/images/is.png" 
+                  src="./public/linkedin.svg" 
                   width="30" 
                   height="30" 
                   alt="Instagram" 
@@ -420,7 +419,7 @@ function App() {
             >
               <Link to="#">
                 <img 
-                  src="https://www.heritagefoods.in/static/images/yt.png" 
+                  src="./public/yt.svg" 
                   width="30" 
                   height="30" 
                   alt="YouTube" 

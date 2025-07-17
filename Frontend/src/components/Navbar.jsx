@@ -208,6 +208,16 @@ const Navbar = () => {
                   Contact Us
                 </NavLink>
               </li>
+              <li className="nav-item">
+                <NavLink
+                  className={({ isActive }) =>
+                    isActive ? "nav-link active" : "nav-link"
+                  }
+                  to="/premium"
+                >
+                  Get Premium
+                </NavLink>
+              </li>
             </ul>
 
             {ready ? (
@@ -276,6 +286,11 @@ const Navbar = () => {
                       {/* Vendor Dropdown Menu */}
                       {LoginUser.isVendor && (
                         <ul className="dropdown-menu">
+                          <li>
+                            <Link className="dropdown-item" to="/account">
+                              My Account
+                            </Link>
+                          </li>
                           {!LoginUser.isCertified && (
                             <li>
                               <Link className="dropdown-item" to="/verify">
@@ -290,6 +305,11 @@ const Navbar = () => {
                               style={{ textWrap: "wrap" }}
                             >
                               Manage Products and Cost
+                            </Link>
+                          </li>
+                          <li>
+                            <Link className="dropdown-item" to="/premium">
+                              Get Premium
                             </Link>
                           </li>
                           <li
@@ -310,6 +330,11 @@ const Navbar = () => {
                       {/* Customer Dropdown Menu */}
                       {!LoginUser.isVendor && (
                         <ul className="dropdown-menu">
+                          <li>
+                            <Link className="dropdown-item" to="/account">
+                              My Account
+                            </Link>
+                          </li>
                           <li>
                             <Link className="dropdown-item" to="/rating">
                               Rate the Vendors
