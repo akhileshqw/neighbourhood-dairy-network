@@ -9,6 +9,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import {   useNavigate } from "react-router-dom";
 import { useToast } from "../context/ToastContext.jsx";
 import { ClipLoader } from "react-spinners";
+import "bootstrap-icons/font/bootstrap-icons.css";
 
 
 
@@ -25,6 +26,8 @@ const Register = () => {
 
   const [resMessage, setresMessage] = useState({});
   const [visible, setVisible] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { setLoginUser } = useContext(userContext);
   const [lat,setLat]=useState(0);
   const [long,setLong]=useState(0);
@@ -454,23 +457,32 @@ const Register = () => {
                 >
                   Enter your password
                 </label>
-                <input
-                  type="password"
-                  className="form-control"
-                  id="exampleFormControlInput1"
-                  placeholder=""
-                  {...register("password", {
-                    required: {
-                      value: true,
-                      message: "This field is required",
-                    },
-                    minLength: {
-                      value: 7,
-                      message:
-                        "The password must consist of at least 7 characters.",
-                    },
-                  })}
-                />
+                <div className="input-group">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    className="form-control"
+                    id="exampleFormControlInput1"
+                    placeholder=""
+                    {...register("password", {
+                      required: {
+                        value: true,
+                        message: "This field is required",
+                      },
+                      minLength: {
+                        value: 7,
+                        message:
+                          "The password must consist of at least 7 characters.",
+                      },
+                    })}
+                  />
+                  <button
+                    className="btn btn-outline-secondary"
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    <i className={showPassword ? "bi bi-eye-slash" : "bi bi-eye"}></i>
+                  </button>
+                </div>
                 {errors.password && (
                   <span className=" flex gap-2 items-center ml-1 text-sm text-danger">
                     {errors.password.message}
@@ -485,23 +497,32 @@ const Register = () => {
                   Confirm your password
                 </label>
 
-                <input
-                  {...register("confirmpassword", {
-                    required: {
-                      value: true,
-                      message: "This field is required",
-                    },
-                    minLength: {
-                      value: 7,
-                      message:
-                        "The password must consist of at least 7 characters.",
-                    },
-                  })}
-                  type="password"
-                  className="form-control"
-                  id="exampleFormControlInput1"
-                  placeholder=""
-                />
+                <div className="input-group">
+                  <input
+                    {...register("confirmpassword", {
+                      required: {
+                        value: true,
+                        message: "This field is required",
+                      },
+                      minLength: {
+                        value: 7,
+                        message:
+                          "The password must consist of at least 7 characters.",
+                      },
+                    })}
+                    type={showConfirmPassword ? "text" : "password"}
+                    className="form-control"
+                    id="confirmPasswordInput"
+                    placeholder=""
+                  />
+                  <button
+                    className="btn btn-outline-secondary"
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    <i className={showConfirmPassword ? "bi bi-eye-slash" : "bi bi-eye"}></i>
+                  </button>
+                </div>
                 {errors.confirmpassword && (
                   <span className=" flex gap-2 items-center ml-1 text-sm text-danger">
                     {errors.confirmpassword.message}

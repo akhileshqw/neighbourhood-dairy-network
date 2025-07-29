@@ -6,10 +6,12 @@ import { Link, Navigate, useNavigate } from "react-router-dom";
 import { userContext } from "../context/userContext";
 import { Bounce, ToastContainer, toast } from "react-toastify";
 import { ClipLoader } from "react-spinners";
+import "bootstrap-icons/font/bootstrap-icons.css";
 const LoginForCustomer = () => {
   const [resMessage, setresMessage] = useState({});
   const [visible, setVisible] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const { setLoginUser } = useContext(userContext);
   const {
@@ -179,22 +181,31 @@ const LoginForCustomer = () => {
                 <label htmlFor="exampleInputPassword" className="form-label">
                   <strong>Password</strong>
                 </label>
-                <input
-                  type="password"
-                  className="form-control"
-                  id="exampleInputPassword"
-                  placeholder="Enter your password"
-                  {...register("password", {
-                    required: {
-                      value: true,
-                      message: "This field is required",
-                    },
-                    minLength: {
-                      value: 7,
-                      message: "The password must be at least 7 characters.",
-                    },
-                  })}
-                />
+                <div className="input-group">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    className="form-control"
+                    id="exampleInputPassword"
+                    placeholder="Enter your password"
+                    {...register("password", {
+                      required: {
+                        value: true,
+                        message: "This field is required",
+                      },
+                      minLength: {
+                        value: 7,
+                        message: "The password must be at least 7 characters.",
+                      },
+                    })}
+                  />
+                  <button
+                    className="btn btn-outline-secondary"
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    <i className={showPassword ? "bi bi-eye-slash" : "bi bi-eye"}></i>
+                  </button>
+                </div>
                 {errors.password && (
                   <div className="text-danger mt-1">
                     <small>{errors.password.message}</small>

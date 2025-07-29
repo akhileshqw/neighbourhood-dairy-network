@@ -5,6 +5,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Bounce, ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { ClipLoader } from "react-spinners";
+import "bootstrap-icons/font/bootstrap-icons.css";
 
 const ForgotPassword = () => {
   const [emailSent, setEmailSent] = useState(false);
@@ -16,6 +17,8 @@ const ForgotPassword = () => {
   const [resetLoading, setResetLoading] = useState(false);
   const [resendTimer, setResendTimer] = useState(0);
   const [canResend, setCanResend] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const timerRef = useRef(null);
   const navigate = useNavigate();
 
@@ -369,22 +372,31 @@ const ForgotPassword = () => {
                 <label htmlFor="password" className="form-label">
                   <strong>New Password</strong>
                 </label>
-                <input
-                  type="password"
-                  className="form-control"
-                  id="password"
-                  placeholder="Enter new password"
-                  {...registerReset("password", {
-                    required: {
-                      value: true,
-                      message: "Password is required",
-                    },
-                    minLength: {
-                      value: 7,
-                      message: "Password must be at least 7 characters",
-                    },
-                  })}
-                />
+                <div className="input-group">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    className="form-control"
+                    id="password"
+                    placeholder="Enter new password"
+                    {...registerReset("password", {
+                      required: {
+                        value: true,
+                        message: "Password is required",
+                      },
+                      minLength: {
+                        value: 7,
+                        message: "Password must be at least 7 characters",
+                      },
+                    })}
+                  />
+                  <button
+                    className="btn btn-outline-secondary"
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    <i className={showPassword ? "bi bi-eye-slash" : "bi bi-eye"}></i>
+                  </button>
+                </div>
                 {resetErrors.password && (
                   <div className="text-danger mt-1">
                     <small>{resetErrors.password.message}</small>
@@ -396,21 +408,30 @@ const ForgotPassword = () => {
                 <label htmlFor="confirmPassword" className="form-label">
                   <strong>Confirm Password</strong>
                 </label>
-                <input
-                  type="password"
-                  className="form-control"
-                  id="confirmPassword"
-                  placeholder="Confirm new password"
-                  {...registerReset("confirmPassword", {
-                    required: {
-                      value: true,
-                      message: "Please confirm your password",
-                    },
-                    validate: (value) =>
-                      value === watch("password") ||
-                      "Passwords do not match",
-                  })}
-                />
+                <div className="input-group">
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    className="form-control"
+                    id="confirmPassword"
+                    placeholder="Confirm new password"
+                    {...registerReset("confirmPassword", {
+                      required: {
+                        value: true,
+                        message: "Please confirm your password",
+                      },
+                      validate: (value) =>
+                        value === watch("password") ||
+                        "Passwords do not match",
+                    })}
+                  />
+                  <button
+                    className="btn btn-outline-secondary"
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    <i className={showConfirmPassword ? "bi bi-eye-slash" : "bi bi-eye"}></i>
+                  </button>
+                </div>
                 {resetErrors.confirmPassword && (
                   <div className="text-danger mt-1">
                     <small>{resetErrors.confirmPassword.message}</small>
