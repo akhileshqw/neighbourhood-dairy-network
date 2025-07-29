@@ -330,8 +330,10 @@ const Chatbot = () => {
       const data = await response.json();
       return data.success ? data.response : data.fallbackResponse || "I'm not sure I understand. Would you like to know about our products, creating an account, or finding the best vendors?";
     } catch (error) {
+
       console.error('Error fetching AI response:', error);
-      return "I'm having trouble connecting right now. Would you like to know about our products, creating an account, or finding the best vendors?";
+      // Return a more helpful message instead of the error message
+      return "I can help you with information about our dairy products, finding vendors, delivery options, and more. What would you like to know?";
     }
   };
 

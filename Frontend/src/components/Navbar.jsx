@@ -107,7 +107,6 @@ const Navbar = () => {
             id="nav-ref"
             className="navbar-toggler"
             type="button"
-            onClick={""}
             data-bs-toggle="collapse"
             data-bs-target="#navbarSupportedContent"
             aria-controls="navbarSupportedContent"

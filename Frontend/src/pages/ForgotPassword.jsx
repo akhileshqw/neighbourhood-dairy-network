@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import "../styles/loginstyle.css";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
@@ -14,6 +14,9 @@ const ForgotPassword = () => {
   const [loading, setLoading] = useState(false);
   const [verifyLoading, setVerifyLoading] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
+  const [resendTimer, setResendTimer] = useState(0);
+  const [canResend, setCanResend] = useState(false);
+  const timerRef = useRef(null);
   const navigate = useNavigate();
 
   const successToast = (msg) => {
@@ -51,6 +54,31 @@ const ForgotPassword = () => {
     formState: { errors: resetErrors },
   } = useForm();
 
+  // Start resend timer when OTP is sent
+  useEffect(() => {
+    if (resendTimer > 0) {
+      timerRef.current = setInterval(() => {
+        setResendTimer((prevTimer) => {
+          if (prevTimer <= 1) {
+            clearInterval(timerRef.current);
+            setCanResend(true);
+            return 0;
+          }
+          return prevTimer - 1;
+        });
+      }, 1000);
+    }
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [resendTimer]);
+
+  const startResendTimer = () => {
+    setResendTimer(60); // 60 seconds timer
+    setCanResend(false);
+  };
+
   const onSubmitEmail = async (data) => {
     try {
       setLoading(true);
@@ -71,6 +99,39 @@ const ForgotPassword = () => {
         setUserEmail(data.email); // Store the email for later use
         setEmailSent(true);
         successToast(result.msg);
+        startResendTimer(); // Start the resend timer
+      } else {
+        failureToast(result.msg);
+      }
+    } catch (error) {
+      failureToast("An error occurred. Please try again.");
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const handleResendOTP = async () => {
+    if (!canResend) return;
+    
+    try {
+      setLoading(true);
+      const response = await fetch(
+        `${import.meta.env.VITE_REACT_APP_BACKEND_BASE_URL}/forgot-password`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email: userEmail }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (result.success) {
+        successToast("OTP resent successfully");
+        startResendTimer(); // Restart the timer
       } else {
         failureToast(result.msg);
       }
@@ -241,6 +302,9 @@ const ForgotPassword = () => {
                 <label htmlFor="token" className="form-label">
                   <strong>Enter OTP</strong>
                 </label>
+                <p className="text-muted small mb-2">
+                  OTP sent to: {userEmail}
+                </p>
                 <input
                   type="text"
                   className="form-control"
@@ -258,6 +322,28 @@ const ForgotPassword = () => {
                     <small>{emailErrors.token.message}</small>
                   </div>
                 )}
+              </div>
+              
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <button
+                  type="button"
+                  className="btn btn-link text-primary p-0"
+                  onClick={() => {
+                    setEmailSent(false);
+                    setUserEmail("");
+                  }}
+                >
+                  Change Email
+                </button>
+                
+                <button
+                  type="button"
+                  className={`btn btn-link text-${canResend ? "primary" : "secondary"} p-0`}
+                  onClick={handleResendOTP}
+                  disabled={!canResend}
+                >
+                  {resendTimer > 0 ? `Resend OTP in ${resendTimer}s` : "Resend OTP"}
+                </button>
               </div>
 
               <button

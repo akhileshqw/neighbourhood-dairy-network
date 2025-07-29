@@ -8,15 +8,32 @@ const Premium = () => {
   
   useEffect(() => {
     // Load Razorpay script
-    const script = document.createElement('script');
-    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-    script.async = true;
-    document.body.appendChild(script);
+    const loadRazorpayScript = () => {
+      return new Promise((resolve) => {
+        const script = document.createElement('script');
+        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+        script.async = true;
+        script.onload = () => {
+          resolve(true);
+        };
+        script.onerror = () => {
+          resolve(false);
+        };
+        document.body.appendChild(script);
+      });
+    };
     
     // Initialize Razorpay handler
     window.razorpayHandler = async (amount, planName) => {
       if (!LoginUser) {
         toast.error("Please login to subscribe to a plan");
+        return;
+      }
+      
+      // Load Razorpay script dynamically
+      const isScriptLoaded = await loadRazorpayScript();
+      if (!isScriptLoaded) {
+        toast.error("Failed to load payment gateway. Please try again later.");
         return;
       }
       
@@ -95,6 +112,13 @@ const Premium = () => {
           },
           theme: {
             color: '#3399cc'
+          },
+          modal: {
+            ondismiss: function() {
+              toast.info("Payment cancelled. You can try again anytime.");
+            },
+            escape: true,
+            backdropclose: false
           }
         };
         
@@ -112,6 +136,9 @@ const Premium = () => {
         toast.error('Failed to initialize payment. Please try again later.');
       }
     };
+    
+    // Load the script when component mounts
+    loadRazorpayScript();
     
     return () => {
       // Cleanup

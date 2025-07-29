@@ -162,7 +162,7 @@ const AboutUs = () => {
                 fontSize: "16px",
               }}
             >
-              Our Mission
+              Our Core Values
             </p>
           </div>
 
@@ -191,7 +191,7 @@ const AboutUs = () => {
                 fontSize: "16px",
               }}
             >
-              Our Core Values
+              Our Mission
             </p>
           </div>
         </div>
