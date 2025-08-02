@@ -80,10 +80,12 @@ const corsOptions = {
     "https://www.example.com",
     "http://localhost:5173",
     "http://localhost:5174",
+    "https://neighbourhood-dairy-network.vercel.app",
     process.env.FRONTEND_URL,
   ],
   credentials: true,
-  methods: ["GET", "POST", "PUT"],
+  methods: ["GET", "POST", "PUT", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
 };
 
 app.use(cors(corsOptions));
@@ -94,6 +96,19 @@ app.use(cookieParser());
 
 app.get("/", (req, res) => {
   res.send("Hello World!");
+});
+
+app.get("/logout", (req, res) => {
+  res.cookie("token", "", {
+    sameSite: "none",
+    secure: true,
+    path: "/",
+    expires: new Date(0),
+    httpOnly: true
+  }).json({
+    success: true,
+    message: "Logged out successfully"
+  });
 });
 
 app.post("/createaccount", async (req, res) => {
@@ -210,8 +225,10 @@ app.post("/createaccount", async (req, res) => {
         res
           .cookie("token", token, {
             sameSite: "none",
-            //modified
-            secure: "true",
+            secure: true,
+            path: "/",
+            maxAge: 2 * 24 * 60 * 60 * 1000, // 2 days in milliseconds
+            httpOnly: true
           })
           .send({
             success: true,
@@ -312,11 +329,10 @@ app.post("/login-vendor", async (req, res) => {
         res
           .cookie("token", token, {
             secure: true,
-
-            // sameSite: "lax", abhi
             sameSite: "none",
-
-            // sa
+            path: "/",
+            maxAge: 2 * 24 * 60 * 60 * 1000, // 2 days in milliseconds
+            httpOnly: true
           })
           .send({
             success: true,
@@ -365,8 +381,10 @@ app.post("/login", async (req, res) => {
         res
           .cookie("token", token, {
             secure: true,
-            // sameSite: "lax",abhi
             sameSite: "none",
+            path: "/",
+            maxAge: 2 * 24 * 60 * 60 * 1000, // 2 days in milliseconds
+            httpOnly: true
           })
           .send({
             success: true,
@@ -381,28 +399,40 @@ app.post("/login", async (req, res) => {
 });
 
 app.get("/profile", (req, res) => {
-  console.log("-------");
-  console.log("the cookie is ");
-  // console.log(req);
-  console.log(req.cookies);
-  console.log("req is :", req);
+  console.log("Profile route accessed");
+  console.log("Cookies received:", req.cookies);
+  
   const { token } = req.cookies;
-  console.log("the user token is", token);
-  if (token) {
+  
+  if (!token) {
+    return res.status(401).json({
+      success: false,
+      msg: "No authentication token found",
+    });
+  }
+  
+  try {
     jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
       if (err) {
+        console.error("Token verification failed:", err);
         return res.status(403).json({
           success: false,
           msg: "Failed to authenticate token",
         });
       }
-      console.log("the user is", user);
-      console.log("successfully completed...");
+      
+      console.log("User authenticated successfully:", user);
+
       res.json(user);
     });
-  } else {
-    res.json(null);
+  } catch (error) {
+    console.error("Error in profile route:", error);
+    return res.status(500).json({
+      success: false,
+      msg: "Server error during authentication",
+    });
   }
+  // The else block is no longer needed as we handle the no-token case at the beginning of the function
 });
 
 // Configure nodemailer transporter with more secure settings

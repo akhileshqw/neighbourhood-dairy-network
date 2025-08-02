@@ -4,6 +4,7 @@ import "./styles/homeStyles.css";
 import 'react-toastify/dist/ReactToastify.css';
 import { ToastContainer, toast } from "react-toastify";
 
+
 // Preload social media icons
 const socialIcons = [
   'https://www.heritagefoods.in/static/images/fb.png',

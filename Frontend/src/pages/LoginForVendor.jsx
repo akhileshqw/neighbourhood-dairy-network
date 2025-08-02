@@ -78,33 +78,32 @@ const LoginForVendor = () => {
     alert(msg);
   };
   const onSubmit = async (data) => {
-    // reset();
     setLoading(true);
     console.log(data);
     try {
       let response = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_BASE_URL}/login-vendor`, {
         method: "POST",
-
         headers: {
           "Content-Type": "application/json",
         },
         credentials: "include",
-
         body: JSON.stringify(data),
       });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      
       let content = await response.json();
-      // console.log("in the cone");
-      // console.log(content);
+      console.log("Login response:", content);
       setresMessage(content);
+      
       if (content.success) {
-        // accountCreated();
         setLoginUser(content.user);
         notifyAndRedirect("Login Successful...", "/");
       } else {
-        // failed(content.msg);
-        failureToast(content.msg);
-
-        resetField("password")
+        failureToast(content.msg || "Login failed. Please check your credentials.");
+        resetField("password");
       }
     } catch (error) {
       console.error("Login error:", error);

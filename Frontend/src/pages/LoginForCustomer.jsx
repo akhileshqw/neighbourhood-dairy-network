@@ -80,28 +80,29 @@ const LoginForCustomer = () => {
         `${import.meta.env.VITE_REACT_APP_BACKEND_BASE_URL}/login`,
         {
           method: "POST",
-
           headers: {
             "Content-Type": "application/json",
           },
           credentials: "include",
-
           body: JSON.stringify(data),
         }
       );
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      
       let content = await response.json();
-    // console.log("in the cone");
-    // console.log(content);
-    setresMessage(content);
-    if (content.success) {
-      // accountCreated();
-      setLoginUser(content.user);
-      notifyAndRedirect("Login Successful...", "/");
-    } else {
-      // failed(content.msg);
-      failureToast(content.msg);
-      resetField("password");
-    }
+      console.log("Login response:", content);
+      setresMessage(content);
+      
+      if (content.success) {
+        setLoginUser(content.user);
+        notifyAndRedirect("Login Successful...", "/");
+      } else {
+        failureToast(content.msg || "Login failed. Please check your credentials.");
+        resetField("password");
+      }
     } catch (error) {
       console.error("Login error:", error);
       failureToast("An error occurred during login. Please try again.");
