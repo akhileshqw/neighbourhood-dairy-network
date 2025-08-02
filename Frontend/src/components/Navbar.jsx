@@ -8,17 +8,27 @@ const Navbar = () => {
   const navigate = useNavigate();
   let { LoginUser } = useContext(userContext);
   const [ready, setready] = useState(false);
-  const handleClick = () => {
-    fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_BASE_URL}/logout`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include", 
-    });
-    // LoginUser=null;
-    navigate("/");
-    window.location.reload();
+  const { setLoginUser } = useContext(userContext);
+  const handleClick = async () => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_BASE_URL}/logout`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include", 
+      });
+
+      if (response.ok) {
+        // Update context state instead of direct mutation
+        setLoginUser(null);
+        navigate("/");
+      } else {
+        console.error("Logout failed");
+      }
+    } catch (error) {
+      console.error("Error during logout:", error);
+    }
   };
   // 1. Direct mutation of LoginUser is incorrect since it's from context
   // 2. The fetch call response is not being handled

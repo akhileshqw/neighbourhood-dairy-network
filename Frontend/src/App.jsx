@@ -270,7 +270,7 @@ function App() {
           <div className="row">
             <div className="col-12">
                 <img
-                  src="./public/cowandcalf.png"
+                  src="/cowandcalf.png"
                   className="img-fluid"
                   alt="Cow and Calf"
                 />

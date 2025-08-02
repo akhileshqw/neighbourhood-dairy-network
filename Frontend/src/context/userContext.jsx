@@ -8,6 +8,7 @@ export function UserContextProvider({ children }) {
 
   const fetchUser = async () => {
     try {
+      console.log("Fetching user profile from:", import.meta.env.VITE_REACT_APP_BACKEND_BASE_URL);
       const response = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_BASE_URL}/profile`, {
         method: "GET",
         headers: {
@@ -15,6 +16,8 @@ export function UserContextProvider({ children }) {
         },
         credentials: "include",
       });
+      
+      console.log("Profile response status:", response.status);
       
       if (!response.ok) {
         console.error("Profile fetch failed:", response.status);
@@ -25,6 +28,14 @@ export function UserContextProvider({ children }) {
       
       const user = await response.json();
       console.log("User profile loaded:", user);
+      
+      if (!user || !user.email) {
+        console.error("Invalid user data received");
+        setLoginUser(null);
+        setReady(true);
+        return;
+      }
+      
       setLoginUser(user);
       setReady(true);
     } catch (error) {

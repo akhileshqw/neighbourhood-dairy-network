@@ -72,10 +72,14 @@ const LoginForCustomer = () => {
   //     alert(msg);
   // };
   const onSubmit = async (data) => {
-    // reset();
     setLoading(true);
-    console.log(data);
+    console.log("Login attempt with email:", data.email);
+    console.log("Backend URL:", import.meta.env.VITE_REACT_APP_BACKEND_BASE_URL);
+    
     try {
+      // Log request details
+      console.log("Sending login request to:", `${import.meta.env.VITE_REACT_APP_BACKEND_BASE_URL}/login`);
+      
       let response = await fetch(
         `${import.meta.env.VITE_REACT_APP_BACKEND_BASE_URL}/login`,
         {
@@ -88,18 +92,24 @@ const LoginForCustomer = () => {
         }
       );
       
+      // Log response status
+      console.log("Login response status:", response.status);
+      console.log("Response headers:", [...response.headers.entries()]);
+      
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
       
       let content = await response.json();
-      console.log("Login response:", content);
+      console.log("Login response content:", content);
       setresMessage(content);
       
       if (content.success) {
+        console.log("Login successful, user data:", content.user);
         setLoginUser(content.user);
         notifyAndRedirect("Login Successful...", "/");
       } else {
+        console.log("Login failed:", content.msg);
         failureToast(content.msg || "Login failed. Please check your credentials.");
         resetField("password");
       }

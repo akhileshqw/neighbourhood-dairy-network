@@ -79,8 +79,13 @@ const LoginForVendor = () => {
   };
   const onSubmit = async (data) => {
     setLoading(true);
-    console.log(data);
+    console.log("Vendor login attempt with email:", data.email);
+    console.log("Backend URL:", import.meta.env.VITE_REACT_APP_BACKEND_BASE_URL);
+    
     try {
+      // Log request details
+      console.log("Sending vendor login request to:", `${import.meta.env.VITE_REACT_APP_BACKEND_BASE_URL}/login-vendor`);
+      
       let response = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_BASE_URL}/login-vendor`, {
         method: "POST",
         headers: {
@@ -90,23 +95,29 @@ const LoginForVendor = () => {
         body: JSON.stringify(data),
       });
       
+      // Log response status
+      console.log("Vendor login response status:", response.status);
+      console.log("Response headers:", [...response.headers.entries()]);
+      
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
       
       let content = await response.json();
-      console.log("Login response:", content);
+      console.log("Vendor login response content:", content);
       setresMessage(content);
       
       if (content.success) {
+        console.log("Vendor login successful, user data:", content.user);
         setLoginUser(content.user);
         notifyAndRedirect("Login Successful...", "/");
       } else {
+        console.log("Vendor login failed:", content.msg);
         failureToast(content.msg || "Login failed. Please check your credentials.");
         resetField("password");
       }
     } catch (error) {
-      console.error("Login error:", error);
+      console.error("Vendor login error:", error);
       failureToast("An error occurred during login. Please try again.");
     } finally {
       setLoading(false);

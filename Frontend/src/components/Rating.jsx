@@ -2,6 +2,7 @@ import React, { useContext, useState } from "react";
 import { useForm } from "react-hook-form";
 import { userContext } from "../context/userContext";
 import { Bounce, ToastContainer, toast } from "react-toastify";
+import Spinner from "react-spinners/ClipLoader";
 // import { RegisterModel } from "../models/registerSchema";
 
 const RatingForm = () => {
@@ -10,6 +11,7 @@ const RatingForm = () => {
       position: "top-center",
     });
   const [rating, setRating] = useState(0); // For storing the selected rating
+  const [isLoading, setIsLoading] = useState(false); // For loading state
   const { LoginUser } = useContext(userContext);
 
   const [imageUrl, setImageUrl] = useState("");
@@ -50,14 +52,12 @@ const RatingForm = () => {
 
   // Handle form submission
   const onSubmit = async (data) => {
-    // let url=imageUrl
-    // console.log()
-    // console.log("Form Data:", { ...data, rating, imageUrl});
-    let givenby=LoginUser.email
-    console.log(givenby)
-    let findata = { ...data, rating, imageUrl,givenby };
-    //   const findUser = await RegisterModel.findOne({ email });
-    //down here
+    setIsLoading(true); // Set loading state to true when form is submitted
+    
+    let givenby = LoginUser.email;
+    console.log(givenby);
+    let findata = { ...data, rating, imageUrl, givenby };
+    
     try {
       let response = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_BASE_URL}/ratings`, {
         method: "POST",
@@ -69,27 +69,18 @@ const RatingForm = () => {
       let content = await response.json();
       console.log("Server response:", content);
 
-      //   setresMessage(content);
       if (content.success) {
-        // accountCreated();
-        // setLoginUser(content.user);
         reset();
-        // alert(content.msg);
-        notify(content.msg)
-
+        notify(content.msg);
       } else {
-        // failed();
-        // console.log("failed");
-        // alert(content.msg);
-        notify(content.msg)
-
+        notify(content.msg);
       }
     } catch (error) {
       console.error("Error during API request:", error);
-      // failed();
+      notify("An error occurred while submitting your rating");
+    } finally {
+      setIsLoading(false); // Set loading state back to false when done
     }
-
-    // alert("Thank you for your feedback!");
   };
 
   // Function to set the rating when a star is clicked
@@ -265,8 +256,21 @@ const RatingForm = () => {
             fontSize: "16px",
             borderRadius: "8px",
           }}
+          disabled={isLoading}
         >
-          Submit Feedback
+          {isLoading ? (
+            <>
+              <Spinner
+                size={15}
+                color={"#ffffff"}
+                loading={true}
+                className="me-2"
+              />
+              Submitting...
+            </>
+          ) : (
+            "Submit Feedback"
+          )}
         </button>
       </form>
     </div>

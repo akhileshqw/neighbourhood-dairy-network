@@ -81,11 +81,13 @@ const corsOptions = {
     "http://localhost:5173",
     "http://localhost:5174",
     "https://neighbourhood-dairy-network.vercel.app",
+    "https://neighbourhood-dairy-network.vercel.app",
     process.env.FRONTEND_URL,
   ],
   credentials: true,
-  methods: ["GET", "POST", "PUT", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+  exposedHeaders: ["set-cookie"],
 };
 
 app.use(cors(corsOptions));
@@ -297,104 +299,127 @@ app.post("/certifyvendor", async (req, res) => {
 });
 
 app.post("/login-vendor", async (req, res) => {
-  const { email, password } = req.body;
-  console.log(email, password);
-  console.log("login route");
+  try {
+    const { email, password } = req.body;
+    console.log("Vendor login attempt for:", email);
 
-  const findUser = await RegisterModel.findOne({ email });
-  if (!findUser) {
-    res.send({ success: false, msg: "User not found" });
-  }
-  if (!findUser.isVendor) {
-    res.send({ success: false, msg: "User is not a vendor" });
-  }
-  const userObj = {
-    email: email,
-    username: findUser.firstname + " " + findUser.lastname,
-    isVendor: findUser.isVendor,
-    isCertified: findUser.isCertified,
-    lat: findUser.lat,
-    lng: findUser.lng,
-  };
-  if (findUser.password === password) {
-    jwt.sign(
-      userObj,
-      process.env.JWT_SECRET,
-      {
-        //remember me
-        expiresIn: "2 days",
-      },
-      (err, token) => {
-        if (err) throw err;
-        res
-          .cookie("token", token, {
-            secure: true,
-            sameSite: "none",
-            path: "/",
-            maxAge: 2 * 24 * 60 * 60 * 1000, // 2 days in milliseconds
-            httpOnly: true
-          })
-          .send({
-            success: true,
-            msg: "Login Successful",
-            user: userObj,
-          });
-      }
-    );
-  } else {
-    res.send({ success: false, msg: "Incorrect Password" });
+    const findUser = await RegisterModel.findOne({ email });
+    if (!findUser) {
+      return res.status(200).json({ success: false, msg: "User not found" });
+    }
+    
+    if (!findUser.isVendor) {
+      return res.status(200).json({ success: false, msg: "User is not a vendor" });
+    }
+    
+    const userObj = {
+      email: email,
+      username: findUser.firstname + " " + findUser.lastname,
+      isVendor: findUser.isVendor,
+      isCertified: findUser.isCertified,
+      lat: findUser.lat,
+      lng: findUser.lng,
+    };
+    
+    if (findUser.password === password) {
+      jwt.sign(
+        userObj,
+        process.env.JWT_SECRET,
+        {
+          expiresIn: "2 days",
+        },
+        (err, token) => {
+          if (err) {
+            console.error("JWT signing error:", err);
+            return res.status(500).json({ success: false, msg: "Authentication error" });
+          }
+          
+          res
+            .cookie("token", token, {
+              secure: true,
+              sameSite: "none",
+              path: "/",
+              maxAge: 2 * 24 * 60 * 60 * 1000, // 2 days in milliseconds
+              httpOnly: true
+            })
+            .status(200)
+            .json({
+              success: true,
+              msg: "Login Successful",
+              user: userObj,
+            });
+        }
+      );
+    } else {
+      return res.status(200).json({ success: false, msg: "Incorrect Password" });
+    }
+  } catch (error) {
+    console.error("Vendor login error:", error);
+    return res.status(500).json({ success: false, msg: "An error occurred during login. Please try again." });
   }
 });
 // console.log(process.env.JWT_SECRET)
 app.post("/login", async (req, res) => {
-  const { email, password } = req.body;
-  console.log(email, password);
-  console.log("login route");
+  try {
+    const { email, password } = req.body;
+    console.log("Customer login attempt for:", email);
 
-  const findUser = await RegisterModel.findOne({ email });
-  if (!findUser) {
-    res.send({ success: false, msg: "User not found" });
-  }
-  if (findUser.isVendor) {
-    res.send({
-      success: false,
-      msg: "You are a vendor. Please log in as a vendor ",
-    });
-  }
-  const userObj = {
-    email: email,
-    username: findUser.firstname + " " + findUser.lastname,
-    isVendor: findUser.isVendor,
-    lat: findUser.lat,
-    lng: findUser.lng,
-  };
-  if (findUser.password === password) {
-    console.log("before jwt");
-    jwt.sign(
-      userObj,
-      process.env.JWT_SECRET,
-      {
-        expiresIn: "2 days",
-      },
-      (err, token) => {
-        if (err) throw err;
-        res
-          .cookie("token", token, {
-            secure: true,
-            sameSite: "none",
-            path: "/",
-            maxAge: 2 * 24 * 60 * 60 * 1000, // 2 days in milliseconds
-            httpOnly: true
-          })
-          .send({
-            success: true,
-            msg: "Login Successful",
-            user: userObj,
-          });
-      }
-    );
-  } else {
-    res.send({ success: false, msg: "Incorrect Password" });
+    const findUser = await RegisterModel.findOne({ email });
+    if (!findUser) {
+      return res.status(200).json({ success: false, msg: "User not found" });
+    }
+    
+    if (findUser.isVendor) {
+      return res.status(200).json({
+        success: false,
+        msg: "You are a vendor. Please log in as a vendor",
+      });
+    }
+    
+    const userObj = {
+      email: email,
+      username: findUser.firstname + " " + findUser.lastname,
+      isVendor: findUser.isVendor,
+      lat: findUser.lat,
+      lng: findUser.lng,
+    };
+    
+    if (findUser.password === password) {
+      console.log("Generating JWT token for user");
+      jwt.sign(
+        userObj,
+        process.env.JWT_SECRET,
+        {
+          expiresIn: "2 days",
+        },
+        (err, token) => {
+          if (err) {
+            console.error("JWT signing error:", err);
+            return res.status(500).json({ success: false, msg: "Authentication error" });
+          }
+          
+          res
+            .cookie("token", token, {
+              secure: true,
+              sameSite: "none",
+              path: "/",
+              maxAge: 2 * 24 * 60 * 60 * 1000, // 2 days in milliseconds
+              httpOnly: true
+            })
+            .status(200)
+            .json({
+              success: true,
+              msg: "Login Successful",
+              user: userObj,
+            });
+        }
+      );
+    } else {
+      return res.status(200).json({ success: false, msg: "Incorrect Password" });
+    }
+  } catch (error) {
+    console.error("Customer login error:", error);
+    return res.status(500).json({ success: false, msg: "An error occurred during login. Please try again." });
   }
 });
 
@@ -405,6 +430,7 @@ app.get("/profile", (req, res) => {
   const { token } = req.cookies;
   
   if (!token) {
+    console.log("No token found in cookies");
     return res.status(401).json({
       success: false,
       msg: "No authentication token found",
@@ -415,6 +441,16 @@ app.get("/profile", (req, res) => {
     jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
       if (err) {
         console.error("Token verification failed:", err);
+        
+        // Clear the invalid token
+        res.cookie("token", "", {
+          sameSite: "none",
+          secure: true,
+          path: "/",
+          expires: new Date(0),
+          httpOnly: true
+        });
+        
         return res.status(403).json({
           success: false,
           msg: "Failed to authenticate token",
@@ -423,7 +459,8 @@ app.get("/profile", (req, res) => {
       
       console.log("User authenticated successfully:", user);
 
-      res.json(user);
+      // Return user data with success status
+      return res.status(200).json(user);
     });
   } catch (error) {
     console.error("Error in profile route:", error);
@@ -432,7 +469,6 @@ app.get("/profile", (req, res) => {
       msg: "Server error during authentication",
     });
   }
-  // The else block is no longer needed as we handle the no-token case at the beginning of the function
 });
 
 // Configure nodemailer transporter with more secure settings
