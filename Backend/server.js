@@ -1048,7 +1048,7 @@ app.post("/api/chatbot/ai-response", async (req, res) => {
       ],
     };
 
-    const url = 'https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent';
+    const url = 'https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent';
     const options = {
       method: 'POST',
       headers: {
