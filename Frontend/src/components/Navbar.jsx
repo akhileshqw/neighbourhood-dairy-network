@@ -111,7 +111,7 @@ const Navbar = () => {
               style={{borderRadius: "100%"}}
               className="d-inline-block align-text-center"
             />
-            <div>Milk on the Way</div>
+            <div>Neighbourhood Diary Network</div>
           </Link>
           <button
             id="nav-ref"
@@ -425,7 +425,7 @@ const Navbar = () => {
                     window.location.href = "/login-customer";
                   }}
                 >
-                  Login for Customer
+                  Login as Customer
                 </button>
                 <button
                   type="button"
@@ -435,7 +435,7 @@ const Navbar = () => {
                     window.location.href = "/login-vendor";
                   }}
                 >
-                  Login for Vendor
+                  Login as  Vendor
                 </button>
               </div>
             </div>

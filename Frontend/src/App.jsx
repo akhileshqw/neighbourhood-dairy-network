@@ -231,7 +231,7 @@ function App() {
                     animationName: "fadeInUp",
                   }}
                 >
-                  Milk on the Way limited
+                  Neighbourhood Diary Network limited
                 </h2>
                 <p
                   className="procont wow fadeInUp"
@@ -244,7 +244,7 @@ function App() {
                     animationName: "fadeInUp",
                   }}
                 >
-                  The Milk on the Way limited was founded by group of Btech
+                  The Neighbourhood Diary Network limited was founded by group of Btech
                   students in the year 2024, which is one of the fastest growing
                   Public Listed Companies in India, with business division -
                   Dairy.{" "}
@@ -437,7 +437,7 @@ function App() {
       </div>
       <div className="copyrightsec text-center">
         <p>
-          Copyright © Milk on the Way Limited.{" "}
+          Copyright © Neighbourhood Diary Network Limited.{" "}
           <span>
             Designed by{" "}
             <Link style={{ fontSize: 20 }} to="#">

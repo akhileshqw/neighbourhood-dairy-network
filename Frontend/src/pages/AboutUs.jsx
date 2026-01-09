@@ -48,8 +48,8 @@ const AboutUs = () => {
             color: "#444",
           }}
         >
-          Welcome to Milk on the Way
-        </h1>
+          Welcome to Neighbourhood Diary Network
+        </h1> 
         <div
           style={{
             maxWidth: "800px",
@@ -60,7 +60,7 @@ const AboutUs = () => {
           }}
         >
           <p style={{ marginBottom: "20px" }}>
-            Milk On the Way is a public limited company having its registered
+            Neighbourhood Diary Network is a public limited company having its registered
             and corporate office at Hyderabad City of Telangana State in India.
             The company was incorporated in the year 1995 and production
             commenced in 1998. Currently, our procurement spans 5 states, and we

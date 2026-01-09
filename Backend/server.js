@@ -518,7 +518,7 @@ app.post("/forgot-password", async (req, res) => {
       subject: "Password Reset OTP",
       html: `
         <h2>Password Reset Request</h2>
-        <p>You requested a password reset for your Milk on the Way account.</p>
+        <p>You requested a password reset for your Neighbourhood Diary Network account.</p>
         <p>Please use the following OTP to reset your password:</p>
         <h3 style="font-size: 24px; background-color: #f0f0f0; padding: 10px; text-align: center; letter-spacing: 5px;">${otp}</h3>
         <p>Go to: <a href="${resetUrl}">${resetUrl}</a></p>
@@ -613,7 +613,7 @@ app.post("/reset-password", async (req, res) => {
       subject: "Your password has been changed",
       html: `
         <h2>Password Change Confirmation</h2>
-        <p>This is a confirmation that the password for your Milk on the Way account has just been changed.</p>
+        <p>This is a confirmation that the password for your Neighbourhood Diary Network account has just been changed.</p>
         <p>If you did not make this change, please contact support immediately.</p>
       `,
     };
@@ -1036,8 +1036,8 @@ app.post("/api/chatbot/ai-response", async (req, res) => {
         {
           parts: [
             { 
-              text: `You are a helpful assistant for a milk delivery service called 'Milk On The Way'. \n\n` +
-                    `Context: Milk On The Way is a service that connects local milk vendors with customers for home delivery. ` +
+              text: `You are a helpful assistant for a milk delivery service called 'Neighbourhood Diary Network'. \n\n` +
+                    `Context: Neighbourhood Diary Network is a service that connects local milk vendors with customers for home delivery. ` +
                     `We offer various milk products including cow milk, buffalo milk, and plant-based alternatives. ` +
                     `Our vendors are verified local dairy farmers and suppliers. ` +
                     `We deliver milk daily or on a schedule set by customers. ` +
