@@ -67,7 +67,7 @@ const Premium = () => {
           key: orderData.key_id,
           amount: orderData.order.amount,
           currency: orderData.order.currency,
-          name: 'Milk On The Way',
+          name: 'Neighbourhood Diary Network',
           description: `${planName} Subscription`,
           order_id: orderData.order.id,
           image: '/logo.png',
@@ -107,7 +107,7 @@ const Premium = () => {
             contact: LoginUser?.phone || ''
           },
           notes: {
-            address: 'Milk On The Way Corporate Office',
+            address: 'Neighbourhood Diary Network Corporate Office',
             plan: planName
           },
           theme: {
@@ -170,9 +170,9 @@ const Premium = () => {
           width={40} 
           height={40} 
           className="me-2 rounded-circle" 
-          alt="Milk on the Way"
+          alt="Neighbourhood Diary Network"
         />
-        <span className="fs-4">Milk on the Way Premium</span>{" "}
+        <span className="fs-4">Neighbourhood Diary Network Premium</span>{" "}
       </Link>{" "}
     </div>{" "}
     <div className="pricing-header p-3 pb-md-4 mx-auto text-center">
@@ -626,7 +626,7 @@ const Premium = () => {
                   <span className="text-warning">★★★★★</span>
                 </div>
               </div>
-              <p className="card-text">"The Standard plan is perfect for my family of three. We love the weekly ghee delivery, and the customer service is excellent. Highly recommend Milk on the Way!"</p>
+              <p className="card-text">"The Standard plan is perfect for my family of three. We love the weekly ghee delivery, and the customer service is excellent. Highly recommend Neighbourhood Diary Network!"</p>
               <p className="text-muted">Standard Plan Member</p>
             </div>
           </div>
@@ -751,9 +751,9 @@ const Premium = () => {
           height={24}
           style={{ borderRadius: '50%' }}
         />{" "}
-        <small className="d-block mb-3 text-body-secondary">© 2024 Milk on the Way Limited</small>{" "}
+        <small className="d-block mb-3 text-body-secondary">© 2024 Neighbourhood Diary Network Limited</small>{" "}
       </div>{" "}
-      <div className="col-6 col-md">
+      <div className="col-6 col-md"> 
         {" "}
         <h5>Products</h5>{" "}
         <ul className="list-unstyled text-small">

@@ -24,7 +24,7 @@
   "devDependencies": {
     "eslint": "^8.57.0"
   },
-  "description": "Backend server for Milk On The Way application with Razorpay integration",
+  "description": "Backend server for Neighbourhood Diary Network application with Razorpay integration",
   "main": "server.js",
   "keywords": [],
   "author": "",

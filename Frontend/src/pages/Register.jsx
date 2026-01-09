@@ -38,7 +38,7 @@ const Register = () => {
 
   const showWelcomeToast = () => {
     setTimeout(() => {
-      toast.success("Welcome to Milk on the way!", {
+      toast.success("Welcome to !", {
         position: "top-right",
         autoClose: 3000,
         hideProgressBar: false,
@@ -323,7 +323,7 @@ const Register = () => {
           <div>
             <div className="container">
               <h3 style={{ textAlign: "center", fontSize: "35px" }}>
-                Register on Milk on the way
+                  Register on Neighbourhood Diary Network
               </h3>
               <div className="container my-4">
                 <div className="mb-3 qaz">
@@ -627,7 +627,7 @@ const Register = () => {
                   style={{ justifyContent: "space-between" }}
                 >
                   <div className="footer" style={{ marginTop: 15 }}>
-                    © 2023-2024 Milk on the way, Inc.{" "}
+                    © 2024-2025 Neighbourhood Diary Network, Inc.{" "}
                     <span>
                       <a href="#" style={{ fontSize: 20 }}>
                         .Privacy

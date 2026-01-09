@@ -223,7 +223,7 @@ const Contact = () => {
               style={{ justifyContent: "space-between" }}
             >
               <div className="footer text-nm">
-                © 2023-2024 Milk on the Way, Inc.{" "}
+                © 2024-2025 Neighbourhood Diary Network, Inc.{" "}
                 <span>
                   <a href="" style={{ fontSize: 20 }}>
                     .Privacy

@@ -150,7 +150,7 @@ const LoginForCustomer = () => {
             }}
           >
             <h2 className="text-center mb-4" style={{ color: "#d9534f" }}>
-              Milk on the Way
+                  Neighbourhood Diary Network
             </h2>
             <p
               className="text-center"
