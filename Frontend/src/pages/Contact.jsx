@@ -65,6 +65,9 @@ const Contact = () => {
     setLoading(true);
     console.log(data);
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+
       let response = await fetch(
         `${import.meta.env.VITE_REACT_APP_BACKEND_BASE_URL}/contact`,
         {
@@ -73,8 +76,10 @@ const Contact = () => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify(data),
+          signal: controller.signal,
         }
       );
+      clearTimeout(timeoutId);
       let content = await response.json();
       if (content.success) {
         reset();
