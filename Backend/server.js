@@ -26,12 +26,14 @@ dotenv.config({
   path: "./.env",
 });
 
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY, { apiVersion: 'v1' });
 
 dotenv.config({
   path: "./.env",
 });
 
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY, {
+  apiVersion: "v1",
+});
 const port = process.env.PORT;
 // console.log(process.env.EMAIL_PASS);
 // const jwtSecret = "lasd4831231#^";
@@ -130,6 +132,13 @@ app.post("/createaccount", async (req, res) => {
     lng,
   } = req.body;
 
+  const isVendorFlag =
+    isVendor === true ||
+    isVendor === "true" ||
+    isVendor === "on" ||
+    isVendor === 1 ||
+    isVendor === "1";
+
   let vendorEmail = email;
   let vendorLocation = address;
   let cowMilkPrice = 100;
@@ -157,7 +166,7 @@ app.post("/createaccount", async (req, res) => {
     return;
   }
 
-  if (isVendor) {
+  if (isVendorFlag) {
     const createUser = await manageProductsModal.create({
       vendorEmail,
       vendorLocation,
@@ -196,7 +205,7 @@ app.post("/createaccount", async (req, res) => {
       password,
       confirmpassword,
       address,
-      isVendor,
+      isVendor: isVendorFlag,
       work,
       rating,
       isCertified: iscertified,
@@ -210,7 +219,7 @@ app.post("/createaccount", async (req, res) => {
     const userObj = {
       username: firstname + " " + lastname,
       email: email,
-      isVendor: isVendor,
+      isVendor: isVendorFlag,
       isCertified: iscertified,
       lat: lat,
       lng: lng,
@@ -994,6 +1003,8 @@ app.post("/api/chatbot/save-conversation", async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
+// const models = await genAI.listModels();
+// console.log("models:",models);
 
 // Endpoint to get AI-powered response for chatbot
 app.post("/api/chatbot/ai-response", async (req, res) => {
@@ -1024,50 +1035,29 @@ app.post("/api/chatbot/ai-response", async (req, res) => {
     // Save conversation
     await conversation.save();
 
-    // Construct prompt with conversation history
     const conversationHistory = conversation.messages
-      .slice(-5) // Get last 5 messages
+      .slice(-5)
       .map((msg) => `${msg.sender}: ${msg.text}`)
       .join("\n");
 
-    // Direct REST API call to Google Generative AI
-    const payload = {
-      contents: [
-        {
-          parts: [
-            { 
-              text: `You are a helpful assistant for a milk delivery service called 'Neighbourhood Diary Network'. \n\n` +
-                    `Context: Neighbourhood Diary Network is a service that connects local milk vendors with customers for home delivery. ` +
-                    `We offer various milk products including cow milk, buffalo milk, and plant-based alternatives. ` +
-                    `Our vendors are verified local dairy farmers and suppliers. ` +
-                    `We deliver milk daily or on a schedule set by customers. ` +
-                    `\n\nConversation history:\n${conversationHistory}\n\nuser: ${message}\n\nAssistant:` 
-            },
-          ],
-        },
-      ],
-    };
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro-001" });
 
-    const url = 'https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent';
-    const options = {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-goog-api-key': process.env.GOOGLE_API_KEY
-      },
-      body: JSON.stringify(payload)
-    };
+    const prompt =
+      `You are a helpful assistant for a milk delivery service called 'Neighbourhood Diary Network'. \n\n` +
+      `Context: Neighbourhood Diary Network is a service that connects local milk vendors with customers for home delivery. ` +
+      `We offer various milk products including cow milk, buffalo milk, and plant-based alternatives. ` +
+      `Our vendors are verified local dairy farmers and suppliers. ` +
+      `We deliver milk daily or on a schedule set by customers. ` +
+      `\n\nConversation history:\n${conversationHistory}\n\nuser: ${message}\n\nAssistant:`;
 
-    const response = await fetch(url, options);
-    const data = await response.json();
-    
-    let aiResponse;
-    if (response.ok && data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
-      aiResponse = data.candidates[0].content.parts[0].text;
-    } else {
-      console.error('Error from Gemini API:', data);
-      throw new Error('Failed to generate response');
-    }
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = await response.text();
+
+    const aiResponse =
+      text && text.trim().length > 0
+        ? text
+        : "I could not generate a detailed answer right now. Please try asking in a simpler way about our milk products, vendors, or delivery options.";
 
     // Add AI response to conversation
     conversation.messages.push({

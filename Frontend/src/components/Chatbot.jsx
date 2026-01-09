@@ -19,6 +19,18 @@ const Chatbot = () => {
 
   // Predefined responses for common queries
   const botResponses = {
+    'milk on the way': {
+      response: "Milk on the Way is a neighbourhood dairy network that connects nearby milk vendors with customers for fresh milk, ghee and curd delivery at your doorstep."
+    },
+    'who are you': {
+      response: "I am your Milk on the Way dairy assistant. I can help you understand our services, products, vendors and subscriptions."
+    },
+    'what do you do': {
+      response: "We help customers find trusted local milk vendors and get fresh milk, ghee and curd delivered regularly."
+    },
+    'service': {
+      response: "Our service connects nearby certified vendors to you, offers different dairy products and supports subscriptions for regular delivery."
+    },
     // Navigation related responses
     'home': {
       response: 'You can visit our home page to see our latest offerings.',
@@ -436,7 +448,7 @@ const Chatbot = () => {
         responded = true;
       }
       // New handling for feedback
-      else if (userInput.includes('feedback') || userInput.includes('review') || 
+  else if (userInput.includes('feedback') || userInput.includes('review') || 
                userInput.includes('suggestion') || userInput.includes('complain')) {
         const response = { 
           text: botResponses.feedback.response, 
