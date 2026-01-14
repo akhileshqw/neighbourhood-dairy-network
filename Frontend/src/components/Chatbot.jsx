@@ -329,7 +329,7 @@ const Chatbot = () => {
   const fetchAIResponse = async (userMessage) => {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000);
+      // const timeoutId = setTimeout(() => controller.abort(), 15000);
 
       const response = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_BASE_URL}/api/chatbot/ai-response`, {
         method: 'POST',
