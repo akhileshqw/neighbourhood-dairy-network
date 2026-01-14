@@ -358,6 +358,7 @@ app.post("/login-vendor", async (req, res) => {
     return res.status(500).json({ success: false, msg: "An error occurred during login. Please try again." });
   }
 });
+
 // console.log(process.env.JWT_SECRET)
 app.post("/login", async (req, res) => {
   try {
