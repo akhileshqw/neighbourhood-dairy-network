@@ -16,7 +16,7 @@
     "express": "^4.21.2",
     "js-cookie": "^3.0.5",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.4.0",
+    "mongoose": "^8.20.3",
     "nodemailer": "^6.9.15",
     "nodemon": "^3.1.10",
     "razorpay": "^2.9.6"

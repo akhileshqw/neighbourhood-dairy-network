@@ -15,6 +15,7 @@ import crypto from "crypto";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { ChatbotModel } from "./models/chatbotSchema.js";
 import Razorpay from "razorpay";
+import { contactModel } from "./models/contactSchema.js";
 
 const app = express();
 
@@ -26,12 +27,12 @@ dotenv.config({
   path: "./.env",
 });
 
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY, { apiVersion: 'v1' });
-
-dotenv.config({
-  path: "./.env",
-});
-
+const geminiApiKey =
+  process.env.GOOGLE_API_KEY ||
+  process.env.GEMINI_API_KEY ||
+  process.env.VITE_GEMINI_API_KEY ||
+  "";
+const genAI = geminiApiKey ? new GoogleGenerativeAI(geminiApiKey) : null;
 const port = process.env.PORT;
 // console.log(process.env.EMAIL_PASS);
 // const jwtSecret = "lasd4831231#^";
@@ -130,6 +131,13 @@ app.post("/createaccount", async (req, res) => {
     lng,
   } = req.body;
 
+  const isVendorFlag =
+    isVendor === true ||
+    isVendor === "true" ||
+    isVendor === "on" ||
+    isVendor === 1 ||
+    isVendor === "1";
+
   let vendorEmail = email;
   let vendorLocation = address;
   let cowMilkPrice = 100;
@@ -157,7 +165,7 @@ app.post("/createaccount", async (req, res) => {
     return;
   }
 
-  if (isVendor) {
+  if (isVendorFlag) {
     const createUser = await manageProductsModal.create({
       vendorEmail,
       vendorLocation,
@@ -196,7 +204,7 @@ app.post("/createaccount", async (req, res) => {
       password,
       confirmpassword,
       address,
-      isVendor,
+      isVendor: isVendorFlag,
       work,
       rating,
       isCertified: iscertified,
@@ -210,7 +218,7 @@ app.post("/createaccount", async (req, res) => {
     const userObj = {
       username: firstname + " " + lastname,
       email: email,
-      isVendor: isVendor,
+      isVendor: isVendorFlag,
       isCertified: iscertified,
       lat: lat,
       lng: lng,
@@ -647,20 +655,47 @@ app.post("/contact", async (req, res) => {
   console.log("in route");
 
   try {
-    // Email options
-    let mailOptions = {
-      from: process.env.EMAIL_USER, // Use environment variable for consistency
-      to: email, // Receiver's email (user's email from the request)
-      subject: "We have received your query", // Subject of the email
-      text: `Thank you for contacting us! 
-          Query Type: ${query} 
-          Concern: ${concern}`, // Plain text body
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+      return res.status(500).send({ success: false, msg: "Email service is not configured" });
+    }
+
+    if (!email || !query || !concern) {
+      return res.status(400).send({ success: false, msg: "Missing required fields" });
+    }
+
+    await contactModel.create({
+      email,
+      query,
+      concern,
+      message: concern
+    });
+
+    const receiverEmail = process.env.CONTACT_RECEIVER_EMAIL || process.env.EMAIL_USER;
+
+    const adminMailOptions = {
+      from: process.env.EMAIL_USER,
+      to: receiverEmail,
+      replyTo: email,
+      subject: `New Contact Query: ${query}`,
+      text: `New contact query received.\n\nFrom: ${email}\nQuery Type: ${query}\n\nConcern:\n${concern}\n`
     };
 
-    // Send the email asynchronously
-    await transporter.sendMail(mailOptions);
-    console.log("Contact email sent successfully");
-    res.status(200).send({ success: true, msg: "Email sent successfully" });
+    const userAckOptions = {
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: "We have received your query",
+      text: `Thank you for contacting Neighbourhood Dairy Network.\n\nQuery Type: ${query}\nConcern: ${concern}\n\nOur team will get back to you shortly.`
+    };
+
+    await transporter.sendMail(adminMailOptions);
+
+    try {
+      await transporter.sendMail(userAckOptions);
+    } catch (ackError) {
+      console.error("Contact acknowledgement email error:", ackError);
+    }
+
+    res.status(200).send({ success: true, msg: "Query submitted successfully" });
   } catch (error) {
     console.error("Contact email error:", error);
     res.status(500).send({ success: false, msg: "Error sending email" });
@@ -995,6 +1030,8 @@ app.post("/api/chatbot/save-conversation", async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
+// const models = await genAI.listModels();
+// console.log("models:",models);
 
 // Endpoint to get AI-powered response for chatbot
 app.post("/api/chatbot/ai-response", async (req, res) => {
@@ -1025,49 +1062,81 @@ app.post("/api/chatbot/ai-response", async (req, res) => {
     // Save conversation
     await conversation.save();
 
-    // Construct prompt with conversation history
     const conversationHistory = conversation.messages
-      .slice(-5) // Get last 5 messages
+      .slice(-5)
       .map((msg) => `${msg.sender}: ${msg.text}`)
       .join("\n");
 
-    // Direct REST API call to Google Generative AI
-    const payload = {
-      contents: [
-        {
-          parts: [
-            { 
-              text: `You are a helpful assistant for a milk delivery service called 'Neighbourhood Diary Network'. \n\n` +
-                    `Context: Neighbourhood Diary Network is a service that connects local milk vendors with customers for home delivery. ` +
-                    `We offer various milk products including cow milk, buffalo milk, and plant-based alternatives. ` +
-                    `Our vendors are verified local dairy farmers and suppliers. ` +
-                    `We deliver milk daily or on a schedule set by customers. ` +
-                    `\n\nConversation history:\n${conversationHistory}\n\nuser: ${message}\n\nAssistant:` 
-            },
-          ],
-        },
-      ],
-    };
+    const prompt =
+      `You are a helpful assistant for a milk delivery service called 'Neighbourhood Dairy Network'.\n\n` +
+      `Primary role: Answer questions about the Neighbourhood Dairy Network app (products, vendors, delivery, subscriptions, payments, account help).\n` +
+      `Secondary role: If the user asks a general question not related to the app, answer it helpfully and concisely.\n` +
+      `If you are unsure, ask one short clarifying question.\n\n` +
+      `Conversation history:\n${conversationHistory}\n\nUser: ${message}\nAssistant:`;
 
-    const url = 'https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent';
-    const options = {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-goog-api-key': process.env.GOOGLE_API_KEY
-      },
-      body: JSON.stringify(payload)
-    };
+    let aiResponseText = "";
+    let lastAiError = null;
 
-    const response = await fetch(url, options);
-    const data = await response.json();
+    const ruleBasedAnswer = (() => {
+      const q = String(message || "").toLowerCase();
+      const has = (s) => q.includes(s);
+
+      if (has("milk") && (has("benefit") || has("healthy") || has("nutrition"))) {
+        return "Milk is a nutrient-rich food that typically provides protein, calcium, vitamin B12, and (when fortified) vitamin D. Benefits can include supporting bone health (calcium + vitamin D), muscle repair (protein), and hydration. If you have lactose intolerance, try lactose-free milk or yogurt/curd, which many people tolerate better.";
+      }
+      if (has("ghee") && (has("benefit") || has("healthy") || has("nutrition"))) {
+        return "Ghee is clarified butter. It’s calorie-dense and mostly fat, so it’s best in moderation. It has a high smoke point for cooking and small amounts of fat-soluble vitamins. If you’re watching cholesterol or calories, use smaller portions and balance with a varied diet.";
+      }
+      if ((has("curd") || has("yogurt")) && (has("benefit") || has("healthy") || has("nutrition"))) {
+        return "Curd/yogurt provides protein and calcium and may contain probiotics that support gut health (depending on the culture). Many people digest curd/yogurt better than milk. Choose unsweetened options if you’re limiting sugar.";
+      }
+      if (has("how") && (has("subscribe") || has("subscription") || has("premium"))) {
+        return "To subscribe, open the Premium page, pick a plan (Basic/Standard/Premium), and complete payment via Razorpay. You can manage or cancel the subscription later from your account.";
+      }
+      if (has("delivery") && (has("time") || has("schedule") || has("when"))) {
+        return "Delivery depends on your local vendor and subscription plan. Premium subscribers typically get priority slots. You can check vendor details and availability from the Vendors section.";
+      }
+      return null;
+    })();
+
+    if (genAI) {
+      const modelCandidates = [
+        "gemini-2.0-flash",
+        "gemini-2.0-flash-lite",
+        "gemini-1.5-flash",
+        "gemini-1.5-pro",
+        "gemini-1.0-pro",
+      ];
+      for (const modelName of modelCandidates) {
+        try {
+          const model = genAI.getGenerativeModel({ model: modelName });
+          const result = await model.generateContent(prompt);
+          const response = await result.response;
+          const text = await response.text();
+          if (text && text.trim().length > 0) {
+            aiResponseText = text.trim();
+            break;
+          }
+        } catch (e) {
+          lastAiError = e;
+          aiResponseText = "";
+        }
+      }
+    }
+
+    let aiResponse =
+      aiResponseText && aiResponseText.trim().length > 0
+        ? aiResponseText.trim()
+        : ruleBasedAnswer ||
+          "I can help with Neighbourhood Dairy Network (products, vendors, delivery, subscriptions) and also general questions. What would you like to know?";
     
-    let aiResponse;
-    if (response.ok && data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
-      aiResponse = data.candidates[0].content.parts[0].text;
-    } else {
-      console.error('Error from Gemini API:', data);
-      throw new Error('Failed to generate response');
+    if (!aiResponseText && lastAiError) {
+      console.error("Gemini generation error:", lastAiError);
+      if (lastAiError?.status === 429) {
+        aiResponse =
+          ruleBasedAnswer ||
+          "AI responses are temporarily unavailable due to API quota/rate limits. I can still answer common questions about milk, ghee, curd, delivery, subscriptions, and vendor discovery—ask me what you need.";
+      }
     }
 
     // Add AI response to conversation

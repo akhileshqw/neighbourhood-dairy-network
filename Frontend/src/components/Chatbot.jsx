@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import '../styles/chatbot.css';
 import { userContext } from '../context/userContext';
 import { v4 as uuidv4 } from 'uuid';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const Chatbot = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -19,6 +20,18 @@ const Chatbot = () => {
 
   // Predefined responses for common queries
   const botResponses = {
+    'milk on the way': {
+      response: "Milk on the Way is a neighbourhood dairy network that connects nearby milk vendors with customers for fresh milk, ghee and curd delivery at your doorstep."
+    },
+    'who are you': {
+      response: "I am your Milk on the Way dairy assistant. I can help you understand our services, products, vendors and subscriptions."
+    },
+    'what do you do': {
+      response: "We help customers find trusted local milk vendors and get fresh milk, ghee and curd delivered regularly."
+    },
+    'service': {
+      response: "Our service connects nearby certified vendors to you, offers different dairy products and supports subscriptions for regular delivery."
+    },
     // Navigation related responses
     'home': {
       response: 'You can visit our home page to see our latest offerings.',
@@ -315,7 +328,9 @@ const Chatbot = () => {
   // Fetch AI response from backend
   const fetchAIResponse = async (userMessage) => {
     try {
-      // Call the backend AI endpoint
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+
       const response = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_BASE_URL}/api/chatbot/ai-response`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -324,16 +339,52 @@ const Chatbot = () => {
           message: userMessage, 
           sessionId,
           userId: LoginUser?._id || 'anonymous'
-        })
+        }),
+        signal: controller.signal
       });
       
-      const data = await response.json();
-      return data.success ? data.response : data.fallbackResponse || "I'm not sure I understand. Would you like to know about our products, creating an account, or finding the best vendors?";
-    } catch (error) {
+      clearTimeout(timeoutId);
 
+      const data = await response.json().catch(() => ({}));
+      if (data.success && data.response) return data.response;
+
+      const clientSide = await fetchClientAIResponse(userMessage);
+      if (clientSide) return clientSide;
+
+      return data.fallbackResponse || "I'm not sure I understand. Would you like to know about our products, creating an account, or finding the best vendors?";
+    } catch (error) {
       console.error('Error fetching AI response:', error);
-      // Return a more helpful message instead of the error message
+
+      const clientSide = await fetchClientAIResponse(userMessage);
+      if (clientSide) return clientSide;
+
       return "I can help you with information about our dairy products, finding vendors, delivery options, and more. What would you like to know?";
+    }
+  };
+
+  const fetchClientAIResponse = async (userMessage) => {
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    if (!apiKey) return null;
+
+    try {
+      const genAI = new GoogleGenerativeAI(apiKey);
+      const modelCandidates = ['gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-pro'];
+
+      for (const modelName of modelCandidates) {
+        try {
+          const model = genAI.getGenerativeModel({ model: modelName });
+          const result = await model.generateContent(userMessage);
+          const response = await result.response;
+          const text = await response.text();
+          if (text && text.trim()) return text.trim();
+        } catch (e) {
+          continue;
+        }
+      }
+
+      return null;
+    } catch (e) {
+      return null;
     }
   };
 
@@ -436,7 +487,7 @@ const Chatbot = () => {
         responded = true;
       }
       // New handling for feedback
-      else if (userInput.includes('feedback') || userInput.includes('review') || 
+  else if (userInput.includes('feedback') || userInput.includes('review') || 
                userInput.includes('suggestion') || userInput.includes('complain')) {
         const response = { 
           text: botResponses.feedback.response, 
