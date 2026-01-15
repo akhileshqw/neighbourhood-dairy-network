@@ -1,9 +1,9 @@
-import React, { useEffect, useState, useRef, useContext } from "react";
+ 
+import React, { useEffect, useState, useContext } from "react";
 import { useSearchParams } from "react-router-dom";
 import { MdOutlineMail } from "react-icons/md";
 import { FaPhoneAlt } from "react-icons/fa";
 import { IoLocationOutline } from "react-icons/io5";
-import { MapContainer, TileLayer, Marker } from "react-leaflet";
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 import "leaflet/dist/leaflet.css";
@@ -13,7 +13,7 @@ import { userContext } from "../context/userContext";
 
 const AboutVendor = () => {
   const [searchParams] = useSearchParams();
-  const [email, setEmail] = useState(searchParams.get("vendoremail"));
+  const email = searchParams.get("vendoremail");
   const [vendorDiaryData, setVendorDiaryData] = useState(null);
     const { LoginUser } = useContext(userContext);
   
@@ -30,11 +30,14 @@ const AboutVendor = () => {
   });
 
   const initializeMapWithRoute = (vendor, user) => {
-    // Create the map instance and set the initial view
-    const map = L.map("map").setView(
-      [vendor.lat, user.lng],
-      13
-    );
+    const vLat = parseFloat(vendor.lat);
+    const vLng = parseFloat(vendor.lng);
+    const uLat = parseFloat(user.lat);
+    const uLng = parseFloat(user.lng);
+    if ([vLat, vLng, uLat, uLng].some((n) => Number.isNaN(n))) {
+      return null;
+    }
+    const map = L.map("map").setView([vLat, vLng], 13);
 
     // Add OpenStreetMap tile layer to the map
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -42,20 +45,17 @@ const AboutVendor = () => {
         '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     }).addTo(map);
 
-    // Create and add marker for vendor
-    const vendorMarker = L.marker([
-      vendor.lat,
-      vendor.lng,
-    ], { icon: customIcon }).addTo(map);
+    const vendorMarker = L.marker([vLat, vLng], { icon: customIcon }).addTo(map);
 
     vendorMarker.bindPopup("<b>Vendor Location</b>").openPopup();
 
-    // Create and add marker for user
-    const userMarker = L.marker([user.lat, user.lng],{ icon: customIcon }).addTo(
-      map
-    );
+    const userMarker = L.marker([uLat, uLng], { icon: customIcon }).addTo(map);
     userMarker.bindPopup("<b>User Location</b>").openPopup();
 
+    const vendorLatLng = L.latLng(vLat, vLng);
+    const userLatLng = L.latLng(uLat, uLng);
+    const bounds = L.latLngBounds([vendorLatLng, userLatLng]);
+    map.fitBounds(bounds, { padding: [40, 40] });
     // Initialize routing control
     const routingControl = L.Routing.control({
       waypoints: [
@@ -85,17 +85,15 @@ const AboutVendor = () => {
       // Adjust map bounds to fit the route
       map.fitBounds(routePolyline.getBounds());
 
-      // Calculate the midpoint of the route
       const routeCoordinates = route.coordinates;
       const midpointIndex = Math.floor(routeCoordinates.length / 2); // Get the middle point of the route
       const midpoint = routeCoordinates[midpointIndex];
 
-      // Add popup at the midpoint of the route
-      const distance = vendorLatLng.distanceTo(userLatLng); // Distance in meters
-      const distanceInKm = (distance / 1000).toFixed(2); // Convert meters to kilometers
-      const distancePopupText = `Shortest Distance: ${distanceInKm} km`;
+      const distanceInKm = ((route.summary?.totalDistance || vendorLatLng.distanceTo(userLatLng)) / 1000).toFixed(2);
+      const timeInMin = route.summary?.totalTime ? Math.round(route.summary.totalTime / 60) : null;
+      const distancePopupText = timeInMin ? `Route Distance: ${distanceInKm} km • ETA: ${timeInMin} min` : `Route Distance: ${distanceInKm} km`;
 
-      const midpointPopup = L.popup({
+      L.popup({
         closeButton: true,
         autoClose: false,
         closeOnClick: false,
@@ -105,17 +103,10 @@ const AboutVendor = () => {
         .openOn(map);
     });
 
-    // Trigger the route calculation without showing the UI
     routingControl.route();
 
-    // Calculate the shortest distance between vendor and user
-    const vendorLatLng = L.latLng(vendor.lat, vendor.lng);
-    const userLatLng = L.latLng(user.lat, user.lng);
-
-    const distance = vendorLatLng.distanceTo(userLatLng); // Distance in meters
-    console.log("Shortest Distance:", distance);
-
-    // Return the map instance in case you need to cleanup or interact with it later
+    const distance = vendorLatLng.distanceTo(userLatLng);
+    console.log("Geodesic Distance:", distance);
     return map;
   };
 
@@ -279,12 +270,12 @@ console.log(vendorDiaryData)
     phone: "+1234567890",
     location: "Vendor Address, City, Country",
     address: {
-      lat: "12.9716",
-      lng: "77.5946",
+      lat: 12.9716,
+      lng: 77.5946,
     },
     userAddress: {
-      lat: "13.0827",
-      lng: "87.2707",
+      lat: 13.0827,
+      lng: 87.2707,
     },
   };
 
@@ -320,6 +311,7 @@ console.log(vendorDiaryData)
   };
 
   return (
+    <React.Fragment>
     <div
       style={{
         display: "flex",
@@ -449,6 +441,7 @@ console.log(vendorDiaryData)
         ))}
       </div>
     </div>
+    </React.Fragment>
   );
 };
 
