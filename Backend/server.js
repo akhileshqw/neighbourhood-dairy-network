@@ -6,6 +6,7 @@ import { RatingModal } from "./models/ratingSchema.js";
 import jwt from "jsonwebtoken";
 import cookieParser from "cookie-parser";
 import nodemailer from "nodemailer";
+// import { Resend } from "resend";
 import bodyParser from "body-parser";
 import Cookies from "js-cookie";
 import https from "https";
@@ -34,6 +35,7 @@ const geminiApiKey =
   "";
 const genAI = geminiApiKey ? new GoogleGenerativeAI(geminiApiKey) : null;
 const port = process.env.PORT;
+// const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 // console.log(process.env.EMAIL_PASS);
 // const jwtSecret = "lasd4831231#^";
 
@@ -482,18 +484,26 @@ app.get("/profile", (req, res) => {
 
 // Configure nodemailer transporter with more secure settings
 const transporter = nodemailer.createTransport({
-  service: "gmail",
   host: "smtp.gmail.com",
-  port: 465,
-  secure: true,
+  port: 587,
+  secure: false,
+  requireTLS: true,
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
   tls: {
-    rejectUnauthorized: false
-  }
+    ciphers: "TLSv1.2",
+  },
+  connectionTimeout: 20000,
+  socketTimeout: 20000,
 });
+
+const getEmailSender = () => {
+  // if (process.env.RESEND_FROM_EMAIL) return process.env.RESEND_FROM_EMAIL;
+  if (process.env.EMAIL_USER) return process.env.EMAIL_USER;
+  return "onboarding@resend.dev";
+};
 
 // Function to generate OTP
 const generateOTP = () => {
@@ -655,10 +665,6 @@ app.post("/contact", async (req, res) => {
   console.log("in route");
 
   try {
-    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-      return res.status(500).send({ success: false, msg: "Email service is not configured" });
-    }
-
     if (!email || !query || !concern) {
       return res.status(400).send({ success: false, msg: "Missing required fields" });
     }
@@ -670,32 +676,66 @@ app.post("/contact", async (req, res) => {
       message: concern
     });
 
-    const receiverEmail = process.env.CONTACT_RECEIVER_EMAIL || process.env.EMAIL_USER;
+    const from = getEmailSender();
+    const receiverEmail = process.env.CONTACT_RECEIVER_EMAIL || from;
 
-    const adminMailOptions = {
-      from: process.env.EMAIL_USER,
-      to: receiverEmail,
-      replyTo: email,
-      subject: `New Contact Query: ${query}`,
-      text: `New contact query received.\n\nFrom: ${email}\nQuery Type: ${query}\n\nConcern:\n${concern}\n`
-    };
+    let adminSent = false;
+    let userSent = false;
 
-    const userAckOptions = {
-      from: process.env.EMAIL_USER,
-      to: email,
-      subject: "We have received your query",
-      text: `Thank you for contacting Neighbourhood Dairy Network.\n\nQuery Type: ${query}\nConcern: ${concern}\n\nOur team will get back to you shortly.`
-    };
+    // if (resend) {
+    //   try {
+    //     await resend.emails.send({
+    //       from,
+    //       to: receiverEmail,
+    //       subject: `New Contact Query: ${query}`,
+    //       html: `<p>New contact query received.</p><p>From: ${email}</p><p>Query Type: ${query}</p><p>Concern:</p><pre>${concern}</pre>`,
+    //     });
+    //     adminSent = true;
+    //   } catch (e) {
+    //     adminSent = false;
+    //   }
+    //   try {
+    //     await resend.emails.send({
+    //       from,
+    //       to: email,
+    //       subject: "We have received your query",
+    //       html: `<p>Thank you for contacting Neighbourhood Dairy Network.</p><p>Query Type: ${query}</p><p>Concern: ${concern}</p><p>Our team will get back to you shortly.</p>`,
+    //     });
+    //     userSent = true;
+    //   } catch (e) {
+    //     userSent = false;
+    //   }
+    // }
 
-    await transporter.sendMail(adminMailOptions);
-
-    try {
-      await transporter.sendMail(userAckOptions);
-    } catch (ackError) {
-      console.error("Contact acknowledgement email error:", ackError);
+    if (!(adminSent && userSent)) {
+      if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+        const adminMailOptions = {
+          from: process.env.EMAIL_USER,
+          to: receiverEmail,
+          replyTo: email,
+          subject: `New Contact Query: ${query}`,
+          text: `New contact query received.\n\nFrom: ${email}\nQuery Type: ${query}\n\nConcern:\n${concern}\n`,
+        };
+        const userAckOptions = {
+          from: process.env.EMAIL_USER,
+          to: email,
+          subject: "We have received your query",
+          text: `Thank you for contacting Neighbourhood Dairy Network.\n\nQuery Type: ${query}\nConcern: ${concern}\n\nOur team will get back to you shortly.`,
+        };
+        await transporter.sendMail(adminMailOptions);
+        try {
+          await transporter.sendMail(userAckOptions);
+          userSent = true;
+        } catch (ackError) {}
+        adminSent = true;
+      }
     }
 
-    res.status(200).send({ success: true, msg: "Query submitted successfully" });
+    if (adminSent && userSent) {
+      return res.status(200).send({ success: true, msg: "Query submitted successfully" });
+    }
+
+    return res.status(500).send({ success: false, msg: "Error sending email" });
   } catch (error) {
     console.error("Contact email error:", error);
     res.status(500).send({ success: false, msg: "Error sending email" });

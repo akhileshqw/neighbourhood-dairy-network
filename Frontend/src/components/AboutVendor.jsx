@@ -59,8 +59,8 @@ const AboutVendor = () => {
     // Initialize routing control
     const routingControl = L.Routing.control({
       waypoints: [
-        L.latLng(vendor.lat, vendor.lng),
-        L.latLng(user.lat, user.lng),
+        L.latLng(vLat, vLng),
+        L.latLng(uLat, uLng),
       ],
       routeWhileDragging: false, // Disable dragging of route
       show: false, // Hide the routing panel
@@ -110,7 +110,7 @@ const AboutVendor = () => {
     return map;
   };
 
-  const AboutVendor = (vendor,user) => {
+  const MapView = (vendor,user) => {
     // const vendor = {
     //   address: { lat: 12.9716, lng: 77.5946 }, // Vendor's address
     // };
@@ -387,7 +387,7 @@ console.log(vendorDiaryData)
 
         <div style={{ marginBottom: "30px" }}>
           <h3>Location</h3>
-          {AboutVendor(vendor.address,vendor.userAddress)}
+          {MapView(vendor.address,vendor.userAddress)}
         </div>
         {["Milk", "Ghee", "Curd"].map((category) => (
           <div key={category} className="mb-4">
