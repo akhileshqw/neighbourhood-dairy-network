@@ -718,9 +718,9 @@ const Premium = () => {
       </div>
     </div>
     
-    <div className="container my-5 py-5 bg-light rounded-3">
-      <div className="row align-items-center">
-        <div className="col-md-8 mx-auto text-center">
+    {/* <div className="container my-5 py-5 bg-light rounded-3">
+      {/* <div className="row align-items-center">
+        {/* <div className="col-md-8 mx-auto text-center">
           <h2 className="display-5 fw-bold">Ready for fresh dairy at your doorstep?</h2>
           <p className="lead mb-4">Join thousands of satisfied customers who enjoy fresh, quality dairy products delivered daily. Sign up today and get your first week at 50% off!</p>
           <div className="d-grid gap-2 d-sm-flex justify-content-sm-center">
@@ -733,9 +733,8 @@ const Premium = () => {
             </button>
             <button type="button" className="btn btn-outline-secondary btn-lg px-4">Learn More</button>
           </div>
-        </div>
-      </div>
-    </div>
+        </div> *   </div> *
+    </div> */}
   </main>{" "}
   <footer className="pt-4 my-md-5 pt-md-5 border-top">
     {" "}

@@ -8,7 +8,8 @@ const SubscriptionStatus = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (LoginUser) {
+    // Only fetch subscription status if user is logged in
+    if (LoginUser && LoginUser._id) {
       fetchSubscriptionStatus();
     } else {
       setLoading(false);

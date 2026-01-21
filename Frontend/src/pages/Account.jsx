@@ -10,29 +10,12 @@ const Account = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadProfile = async () => {
-      if (LoginUser && LoginUser.email) {
-        setUserData(LoginUser);
-        try {
-          const response = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_BASE_URL}/getnormalinfo`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
-            body: JSON.stringify({ givenby: LoginUser.email }),
-          });
-          if (response.ok) {
-            const data = await response.json();
-            if (Array.isArray(data) && data[0]) {
-              setUserData(data[0]);
-            }
-          }
-        } catch (e) {}
-        setLoading(false);
-      } else {
-        setLoading(false);
-      }
-    };
-    loadProfile();
+    if (LoginUser && LoginUser._id) {
+      setUserData(LoginUser);
+      setLoading(false);
+    } else {
+      setLoading(false);
+    }
   }, [LoginUser]);
 
   if (!LoginUser && !loading) {
