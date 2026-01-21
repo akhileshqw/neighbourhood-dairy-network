@@ -73,7 +73,7 @@ const AboutUs = () => {
             Our distribution and marketing operations include distributing our
             products through more than 75 sales offices, around 2500 agents, and
             approximately 2000 distributors across 11 states in India.
-            Additionally, as of March 31st, 2024, our milk and dairy-based VAPs
+            Additionally, as of December 31st, 2025, our milk and dairy-based VAPs
             are also available through more than 600 “Dodla Retail Parlours,”
             which commenced operations in 2016 and are spread across Andhra
             Pradesh, Telangana, Tamil Nadu, and Karnataka.

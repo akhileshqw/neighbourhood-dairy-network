@@ -30,6 +30,8 @@ import Manage from "./components/Manage.jsx";
 import AboutVendor from "./components/AboutVendor.jsx";
 import Account from "./pages/Account.jsx";
 import { ToastProvider } from "./context/ToastContext.jsx";
+import Checkout from "./pages/Checkout.jsx";
+import PaymentSuccess from "./pages/PaymentSuccess.jsx";
 const router = createBrowserRouter([
   {
     path: "/",
@@ -55,6 +57,8 @@ const router = createBrowserRouter([
       {path:"/aboutvendor",element:<AboutVendor/>},
       {path:"/premium",element:<Premium/>},
       {path:"/account",element:<Account/>},
+      {path:"/checkout",element:<Checkout/>},
+      {path:"/payment-success",element:<PaymentSuccess/>},
       
     ],
   },

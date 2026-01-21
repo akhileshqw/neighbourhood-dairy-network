@@ -54,7 +54,7 @@ const SignIn = () => {
                 >
                     Sign in
                 </button>
-                <p className="mt-5 mb-3 text-body-secondary">© 2017–2024</p>
+                <p className="mt-5 mb-3 text-body-secondary">© 2017–2026</p>
             </form>
         </main>
     );

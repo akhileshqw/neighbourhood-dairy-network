@@ -1,10 +1,11 @@
 import React, { useEffect, useContext } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { userContext } from '../context/userContext'
 
 const Premium = () => {
   const { LoginUser } = useContext(userContext);
+  const navigate = useNavigate();
   
   useEffect(() => {
     // Load Razorpay script
@@ -215,7 +216,7 @@ const Premium = () => {
             <button
               type="button"
               className="w-100 btn btn-lg btn-outline-primary"
-              onClick={() => window.razorpayHandler(499, 'Basic Plan')}
+              onClick={() => navigate('/checkout', { state: { amount: 499, planName: 'Basic' } })}
             >
               Subscribe Now
             </button>{" "}
@@ -247,7 +248,7 @@ const Premium = () => {
             <button 
               type="button" 
               className="w-100 btn btn-lg btn-primary"
-              onClick={() => window.razorpayHandler(899, 'Standard Plan')}
+              onClick={() => navigate('/checkout', { state: { amount: 899, planName: 'Standard' } })}
             >
               Subscribe Now
             </button>{" "}
@@ -280,7 +281,7 @@ const Premium = () => {
             <button 
               type="button" 
               className="w-100 btn btn-lg btn-primary"
-              onClick={() => window.razorpayHandler(1499, 'Premium Plan')}
+              onClick={() => navigate('/checkout', { state: { amount: 1499, planName: 'Premium' } })}
             >
               Subscribe Now
             </button>{" "}
@@ -750,7 +751,7 @@ const Premium = () => {
           height={24}
           style={{ borderRadius: '50%' }}
         />{" "}
-        <small className="d-block mb-3 text-body-secondary">© 2024 Neighbourhood Diary Network Limited</small>{" "}
+        <small className="d-block mb-3 text-body-secondary">© 2026 Neighbourhood Diary Network Limited</small>{" "}
       </div>{" "}
       <div className="col-6 col-md"> 
         {" "}
