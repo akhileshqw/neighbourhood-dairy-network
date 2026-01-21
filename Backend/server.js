@@ -530,7 +530,7 @@ app.post("/forgot-password", async (req, res) => {
         <p>You requested a password reset for your Neighbourhood Diary Network account.</p>
         <p>Please use the following OTP to reset your password:</p>
         <h3 style="font-size: 24px; background-color: #f0f0f0; padding: 10px; text-align: center; letter-spacing: 5px;">${otp}</h3>
-        <p>Go to: <a href="${resetUrl}">${resetUrl}</a></p>
+        
         <p>This OTP is valid for 1 hour.</p>
         <p>If you did not request this, please ignore this email and your password will remain unchanged.</p>
       `,
